@@ -4,8 +4,9 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "web",
+	"name": "kmdblog-web-dev",
 	"main": ".open-next/worker.js",
+	"account_id": "b0a13428f1c5b31e40235985336f152b",
 	"compatibility_date": "2025-03-01",
 	"compatibility_flags": [
 		"nodejs_compat",
@@ -15,9 +16,44 @@
 		"binding": "ASSETS",
 		"directory": ".open-next/assets"
 	},
+	"workers_dev": false,
+	"routes": [
+		{ 
+			"pattern": "dev.kmdworks.com/*",
+			"zone_id": "f67c469f67d07f170dd469f0d71df7b4"
+		},
+	],
 	"observability": {
 		"enabled": true
-	}
+	},
+	"vars": { 
+		"APP_ENV": "dev",
+		"API_BASE_URL": "https://api-dev.example.com"	
+	},
+
+	"d1_databases": [{
+		"binding": "DB",
+		"database_name": "kmdblog-d1-dev",
+		"database_id": "94d6e5d1-33fd-4704-9ea9-8b9b85f06c43",
+		// "migrations_dir": "./drizzle"
+	}],
+ 	"kv_namespaces": [
+		{ 
+			"binding": "KV_CACHE", 
+			"id": "60f75a20af044705a50d6b9ef424bcc9" 
+		}
+	],
+	
+	"r2_buckets": [
+		{ 
+			"binding": "R2_POSTS",  
+			"bucket_name": "kmdblog-md-dev" 
+		},
+		{ 
+			"binding": "R2_IMAGES", 
+			"bucket_name": "kmdblog-images-dev" 
+		}
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -33,7 +69,6 @@
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	// "vars": { "MY_VARIABLE": "production_value" }
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
@@ -49,3 +84,26 @@
 	 */
 	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
 }
+
+
+
+// ローカルにR2を構築
+// wrangler dev --config wrangler.dev.jsonc
+
+// wrangler r2 object put kmdblog-images-dev/posts/hello-world-r2/here.png \
+//   --file ./content/here.png \
+//   --local \
+//   --config wrangler.dev.jsonc
+
+// wrangler r2 object put kmdblog-posts-dev/posts/2025/10/hello-world-r2.md \      
+//   --file ./content/hello-world-r2.md \
+//   --local \
+//   --config wrangler.dev.jsonc
+
+// # /web/.env.local
+// NEXT_PUBLIC_REMOTE_ORIGIN=http://localhost:8787
+// MOCK=0
+// LOG_LEVEL=debug
+
+// # ターミナルA（Worker）
+// wrangler dev --local --config wrangler.dev.jsonc

@@ -9,7 +9,11 @@
 		"lint": "next lint",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
+		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
+		"deploy:dev": "opennextjs-cloudflare build && wrangler deploy --config wrangler.dev.jsonc",
+		"deploy:stg": "opennextjs-cloudflare build && wrangler deploy --config wrangler.stg.jsonc",
+		"deploy:prod": "opennextjs-cloudflare build && wrangler deploy --config wrangler.prod.jsonc",
+		"local:dev": "opennextjs-cloudflare build && wrangler dev --local --config wrangler.dev.jsonc"
 	},
 	"dependencies": {
 		"@opennextjs/cloudflare": "^1.3.0",

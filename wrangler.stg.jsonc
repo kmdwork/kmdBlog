@@ -1,0 +1,52 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "kmdblog-web-stg",
+	"main": ".open-next/worker.js",
+	"account_id": "b0a13428f1c5b31e40235985336f152b",
+	"compatibility_date": "2025-03-01",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".open-next/assets"
+	},
+	"workers_dev": false,
+	"routes": [
+		{ 
+			"pattern": "stg.kmdworks.com/*",
+			"zone_id": "f67c469f67d07f170dd469f0d71df7b4"
+		},
+	],
+
+	"observability": {
+		"enabled": true
+	},
+	"vars": { 
+		"APP_ENV": "stg",
+		"API_BASE_URL": "https://api-stg.example.com"	
+	},
+
+	"d1_databases": [{
+		"binding": "DB",
+		"database_name": "kmdblog-d1-stg",
+		"database_id": "1e4af4a6-62c2-4932-a20f-8f1c939f8774",
+		// "migrations_dir": "./drizzle"
+	}],
+	"kv_namespaces": [{
+        "binding": "KV_BINDING",
+        "id": "1aaa06c8b7574a378d9d0c63e515700f"
+    }],
+    
+	"r2_buckets": [
+		{ 
+			"binding": "R2_POSTS",  
+			"bucket_name": "kmdblog-md-stg" 
+		},
+		{ 
+			"binding": "R2_IMAGES", 
+			"bucket_name": "kmdblog-images-stg" 
+		}
+	]
+}
