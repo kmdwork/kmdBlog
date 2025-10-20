@@ -32,7 +32,7 @@
 		"binding": "DB",
 		"database_name": "kmdblog-d1-stg",
 		"database_id": "1e4af4a6-62c2-4932-a20f-8f1c939f8774",
-		// "migrations_dir": "./drizzle"
+		"migrations_dir": "./drizzle"
 	}],
 	"kv_namespaces": [{
         "binding": "KV_BINDING",

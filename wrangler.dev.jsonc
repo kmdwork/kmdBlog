@@ -35,7 +35,7 @@
 		"binding": "DB",
 		"database_name": "kmdblog-d1-dev",
 		"database_id": "94d6e5d1-33fd-4704-9ea9-8b9b85f06c43",
-		// "migrations_dir": "./drizzle"
+		"migrations_dir": "./drizzle"
 	}],
  	"kv_namespaces": [
 		{ 

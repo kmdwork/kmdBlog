@@ -1,0 +1,40 @@
+
+name: Deploy Staging (minimal)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy-stg:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (OpenNext)
+        run: npx opennextjs-cloudflare build --config wrangler.stg.jsonc
+
+      - name: Deploy to Cloudflare (Staging)
+        # wrangler.stg.jsonc はリポジトリ直下にある前提
+        run: npx wrangler deploy --config wrangler.stg.jsonc
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+
+
+          

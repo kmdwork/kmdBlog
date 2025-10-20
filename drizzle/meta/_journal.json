@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1760859006587,
+      "tag": "0000_loose_stephen_strange",
+      "breakpoints": true
+    }
+  ]
+}
