@@ -25,7 +25,8 @@
 	},
 	"vars": { 
 		"APP_ENV": "stg",
-		"API_BASE_URL": "https://api-stg.example.com"	
+		"API_BASE_URL": "https://api-stg.example.com",
+		"APP_ORIGIN": "https://stg.kmdworks.com",
 	},
 
 	"d1_databases": [{

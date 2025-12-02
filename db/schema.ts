@@ -18,7 +18,7 @@ export const users = sqliteTable(
 
         // 列挙制約で型安全に
         role: text("role", {
-        enum: ["admin", "editor", "author", "reader"],
+            enum: ["admin", "editor", "author", "reader"],
         })
             .notNull()
             .default("reader"),
@@ -29,8 +29,7 @@ export const users = sqliteTable(
         updatedAt: integer("updated_at", { mode: "timestamp_ms" })
             .notNull()
             .default(sql`(unixepoch() * 1000)`)
-            // アプリ側での更新に加え保険
-            .$onUpdate(() => sql`(unixepoch() * 1000)`),
+            .$onUpdate(() => new Date()),
     },
     (t) => [
         index("idx_users_active").on(t.isActive),
@@ -89,7 +88,7 @@ export const posts = sqliteTable(
         updatedAt: integer("updated_at", { mode: "timestamp_ms" })
             .notNull()
             .default(sql`(unixepoch() * 1000)`)
-            .$onUpdate(() => sql`(unixepoch() * 1000)`),
+            .$onUpdate(() => new Date()), 
         // R2メタ
         r2Key: text("r2_key").notNull(),
         checksum: text("checksum"),

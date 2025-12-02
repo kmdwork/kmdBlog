@@ -25,7 +25,8 @@
 	},
 	"vars": { 
 		"APP_ENV": "prod",
-		"API_BASE_URL": "https://api-prod.example.com"	
+		"API_BASE_URL": "https://api-prod.example.com",	
+		"APP_ORIGIN": "https://kmdworks.com",
 	},
 
 	"d1_databases": [{

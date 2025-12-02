@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
-:root {
+@plugin '@tailwindcss/typography';
+
+html[data-theme='dark'] .prose { @apply prose-invert; }
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+/* :root {
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -23,4 +30,41 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+} */
+
+:root {
+  --bg: #fafafa;
+  --text: #1f2937; /* gray-800 */
+  --card: #ffffff;
+  --border: #e5e7eb; /* gray-200 */
+  --accent-cyan: #0891b2; /* cyan-700 */
+  --accent-pink: #db2777; /* pink-600 */
+  --accent-yellow: #ca8a04; /* amber-600 */
 }
+html[data-theme='dark'] {
+  --bg: #0b0f14; /* 限りなく黒に近い */
+  --text: #e5e7eb; /* gray-200 */
+  --card: #12161d;
+  --border: #374151; /* gray-700 */
+  --accent-cyan: #22d3ee; /* cyan-300 */
+  --accent-pink: #ec4899; /* pink-500 */
+  --accent-yellow: #facc15; /* amber-300 */
+}
+
+
+/* 変数を使うヘルパー */
+.bg-app { background-color: var(--bg); }
+.text-app { color: var(--text); }
+.bg-card { background-color: var(--card); }
+.border-app { border-color: var(--border); }
+
+
+/* 可読性を補助する細かなユーティリティ */
+.hr-accent { background-image: linear-gradient(90deg,var(--accent-cyan),var(--accent-pink),var(--accent-yellow)); height: 2px; border: 0; }
+.link-accent { color: var(--accent-cyan); }
+.link-accent:hover { color: var(--accent-pink); }
+
+
+/* Scanline の負荷を抑えつつ効果を出す */
+.scanline { pointer-events: none; mix-blend-mode: overlay; opacity: 0.4; }
+
