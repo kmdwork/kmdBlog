@@ -92,16 +92,127 @@ export default function CreatePost() {
             return;
         }
 
-        const fd = new FormData();
-        fd.set("slug", slug);
-        fd.set("image", file);
-
-        // サーバーアクション実行
-        uploadAction(fd);
-
-        // 同じファイルを続けて選べるようにinput値をリセット
-        e.target.value = "";
+        try {
+            setCompressing(true);
+            // ここで圧縮（webp化 & リサイズ）
+            const compressed = await compressImageToWebp(file, 1600, 0.8);
+            
+            const fd = new FormData();
+            fd.set("slug", slug);
+            fd.set("image", compressed);
+    
+            // サーバーアクション実行
+            uploadAction(fd);            
+        } catch (error) {
+            console.error(error);
+            alert("画像の圧縮中にエラーが発生しました。もう一度お試しください。");
+        } finally {
+            // 同じファイルを続けて選べるようにinput値をリセット
+            e.target.value = "";
+            setCompressing(false);
+        }
     }
+
+    // 画像の圧縮
+    async function compressImageToWebp(
+        file: File,
+        maxSize = 1600,
+        quality = 0.8,
+        minSizeToCompress = 300 * 1024 // ← 300KB 未満は圧縮しない
+    ): Promise<File> {
+        // 小さいファイルはそのまま返す
+        if (file.size <= minSizeToCompress) {
+            return file;
+        }
+
+        return new Promise((resolve, reject) => {
+            // タイムアウト設定(30秒)
+            const timeout = setTimeout(() => {
+                reject(new Error("Image processing timeout"));
+            }, 30000);
+
+            const img = document.createElement("img");
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                img.src = reader.result as string;
+            };
+
+            reader.onerror = (err) => {
+                clearTimeout(timeout);
+                reject(err);
+            };
+
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d", { alpha: false });
+
+                    if (!ctx) {
+                        clearTimeout(timeout);
+                        reject(new Error("Canvas not supported"));
+                        return;
+                    }
+
+                    let { width, height } = img;
+
+                    // 既に小さい画像はリサイズせず圧縮だけ（※ただし150KB超えているので再エンコードはする）
+                    if (width <= maxSize && height <= maxSize) {
+                        canvas.width = width;
+                        canvas.height = height;
+                    } else {
+                        // アスペクト比を保って縮小
+                        if (width > height) {
+                            if (width > maxSize) {
+                            height = Math.round((height * maxSize) / width);
+                            width = maxSize;
+                            }
+                        } else {
+                            if (height > maxSize) {
+                            width = Math.round((width * maxSize) / height);
+                            height = maxSize;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                    }
+
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(
+                        (blob) => {
+                            clearTimeout(timeout);
+
+                            if (!blob) {
+                                reject(new Error("Failed to compress image"));
+                                return;
+                            }
+
+                            const baseName = file.name.replace(/\.[^/.]+$/, "");
+                            const compressedFile = new File([blob], `${baseName}.webp`, {
+                                type: "image/webp",
+                                lastModified: Date.now(),
+                            });
+
+                            resolve(compressedFile);
+                        },
+                        "image/webp",
+                        quality
+                    );
+                } catch (err) {
+                    clearTimeout(timeout);
+                    reject(err);
+                }
+            };
+
+            img.onerror = (err) => {
+                clearTimeout(timeout);
+                reject(err);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
 
     // 別のuseEffectで結果を処理
     useEffect(() => {
@@ -122,6 +233,10 @@ export default function CreatePost() {
     const [tags, setTags] = useState("");
     const [autoSlug, setAutoSlug] = useState(false); // スラッグ自動生成
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    // 追加: 圧縮中フラグ
+    const [compressing, setCompressing] = useState(false);
+    // 圧縮中　画像追加中　切り替え
+    const disabled = uploading || compressing;
 
     // タイトル変更時にスラッグを自動生成
     useEffect(() => {
@@ -319,9 +434,15 @@ export default function CreatePost() {
                             画像を挿入
                             </span>
                             {/* 画像アップロード中のメッセージ */}
-                            {uploading && (
-                                <p className="text-xs opacity-60 mt-1">画像をアップロード中…</p>
-                            )} 
+                            {disabled ? (
+                                <p className="text-xs opacity-60 mt-1">
+                                    {compressing ? "画像を圧縮中…" : "画像をアップロード中…"}
+                                </p>
+                            ) : (
+                                <p className="text-xs opacity-60 mt-1">
+                                    画像のファイル名に空白や日本語を使わないでください
+                                </p>
+                            )}
                         </label>
                         {err('content') && (
                             <p className="text-red-600 text-sm mt-1">{err('content')}</p>

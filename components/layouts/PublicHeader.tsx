@@ -1,8 +1,17 @@
 // app/components/layouts/PublicHeader.tsx
 
 import ThemeToggle from "@/components/ThemeToggle";
+import Link from "next/link";
+
+const navItems = [
+    { label: "INIT", href: "/" },               // 全ロール
+    { label: "POSTS", href: "/posts" },         // 全ロール（投稿管理想定）
+];
+
 
 export default function PublicHeader() {
+    const items = navItems;
+    
     return (
         <header className="border-b border-app bg-card/80 backdrop-blur-sm sticky top-0 z-[100]">
             <nav className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
@@ -16,15 +25,15 @@ export default function PublicHeader() {
                 <div className="flex items-center gap-3 sm:gap-6 text-sm">
                 {/* PC: 横並び / SP: 非表示 */}
                 <div className="hidden sm:flex items-center gap-6">
-                    {['INIT','WORK','BLOG','LINK'].map((item,i)=>(
-                    <a
-                        key={item}
-                        href={item==='BLOG'?'/blog':'#'}
-                        className="text-[var(--accent-cyan)] hover:text-[var(--accent-pink)] transition whitespace-nowrap"
-                    >
-                        [{i.toString().padStart(2,'0')}] {item}
-                    </a>
-                    ))}
+                        {items.map((item, i) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className="text-[var(--accent-cyan)] hover:text-[var(--accent-pink)] transition whitespace-nowrap"
+                            >
+                                [{i.toString().padStart(2, "0")}] {item.label}
+                            </Link>
+                        ))}
                 </div>
 
                 {/* SP: CSSだけのドロップダウン（<details>） / PC: 非表示 */}
@@ -34,15 +43,15 @@ export default function PublicHeader() {
                     </summary>
                     <div className="absolute right-0 mt-2 w-44 bg-card border border-[var(--border)] rounded-lg shadow-lg p-2">
                     <ul className="flex flex-col">
-                        {['INIT','WORK','BLOG','LINK'].map((item,i)=>(
-                        <li key={item}>
-                            <a
-                            href={item==='BLOG'?'/blog':'#'}
-                            className="block px-2 py-2 rounded hover:bg-[var(--bg)]"
-                            >
-                            [{i.toString().padStart(2,'0')}] {item}
-                            </a>
-                        </li>
+                        {items.map((item, i) => (
+                            <li key={item.href}>
+                                <Link
+                                    href={item.href}
+                                    className="block px-2 py-2 rounded hover:bg-[var(--bg)]"
+                                >
+                                    [{i.toString().padStart(2, "0")}] {item.label}
+                                </Link>
+                            </li>
                         ))}
                     </ul>
                     </div>

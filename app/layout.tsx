@@ -21,6 +21,21 @@ export const metadata: Metadata = {
       template: "%s | KMD WORKS",
     },
     description: "KMD WORKS のホームページ",
+    openGraph: {
+      type: "website",
+      url: "https://kmdworks.com",
+      title: "KMD WORKS",
+      description: "KMD WORKS のホームページ",
+      images: [
+        {
+          url: "https://kmdworks.com/ogp.jpg",
+          width: 1200,
+          height: 630,
+          alt: "KMD WORKS",
+        },
+      ],
+    },
+    
 };
 
 // export default function RootLayout({
@@ -43,7 +58,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const cookieStore = cookies()
   const cookieTheme = (await cookieStore).get('theme')?.value as 'light'|'dark'|undefined
   // サーバ側で data-theme を確定（なければ light/dark のデフォルト決め打ち）
-  const initialTheme = cookieTheme ?? 'dark'
+  const initialTheme = cookieTheme ?? 'light' //　デフォルトはライト
 
   return (
     <html lang="ja" data-theme={initialTheme}>

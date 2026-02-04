@@ -173,9 +173,9 @@ export default function HomePage() {
               "
             >
               <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-70">
-                <span className="px-2 py-0.5 rounded-full border border-[var(--border)] bg-black text-white">
+                {/* <span className="px-2 py-0.5 rounded-full border border-[var(--border)] bg-black text-white">
                   X
-                </span>
+                </span> */}
                 <span>Micro Blog</span>
               </div>
               <h4 className="mt-4 text-xl font-bold">
@@ -203,9 +203,9 @@ export default function HomePage() {
               "
             >
               <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-70">
-                <span className="px-2 py-0.5 rounded-full border border-[var(--border)] bg-blue-500 text-white">
+                {/* <span className="px-2 py-0.5 rounded-full border border-[var(--border)] bg-blue-500 text-white">
                   Zenn
-                </span>
+                </span> */}
                 <span>Article</span>
               </div>
               <h4 className="mt-4 text-xl font-bold">
@@ -233,9 +233,9 @@ export default function HomePage() {
               "
             >
               <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-70">
-                <span className="px-2 py-0.5 rounded-full border border-[var(--border)] bg-red-600 text-white">
+                {/* <span className="px-2 py-0.5 rounded-full border border-[var(--border)] bg-red-600 text-white">
                   ▶
-                </span>
+                </span> */}
                 <span>Video</span>
               </div>
               <h4 className="mt-4 text-xl font-bold">

@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "kmdblog-web-stg",
+	"name": "kmdblog-web-prod",
 	"main": ".open-next/worker.js",
 	"account_id": "b0a13428f1c5b31e40235985336f152b",
 	"compatibility_date": "2025-03-01",
@@ -48,7 +48,7 @@
 		},
 		{ 
 			"binding": "R2_IMAGES", 
-			"bucket_name": "kmdblog-md-prod" 
+			"bucket_name": "kmdblog-images-prod"
 		}
 	]
 }

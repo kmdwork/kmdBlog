@@ -71,17 +71,17 @@ export default function PrivateHeader({ session }:{ session?: Session | null }) 
                                 {items.map((item, i) => (
                                 <li key={item.href}>
                                     <Link
-                                    href={item.href}
-                                    className="block px-2 py-2 rounded hover:bg-[var(--bg)]"
+                                        href={item.href}
+                                        className="block px-2 py-2 rounded hover:bg-[var(--bg)]"
                                     >
-                                    [{i.toString().padStart(2, "0")}] {item.label}
+                                        [{i.toString().padStart(2, "0")}] {item.label}
                                     </Link>
                                 </li>
                                 ))}
                                 <li className="mt-1 border-t border-[var(--border)]" />
                                 {/* SPではトグルをメニュー内に格納 */}
                                 <li className="px-2 py-2">
-                                <ThemeToggle />
+                                    <ThemeToggle />
                                 </li>
                             </ul>
                         </div>
