@@ -36,7 +36,8 @@
 		"migrations_dir": "./drizzle"
 	}],
 	"kv_namespaces": [{
-        "binding": "KV_BINDING",
+        // "binding": "KV_BINDING",
+		"binding": "KV_CACHE",
         "id": "1aaa06c8b7574a378d9d0c63e515700f"
     }],
     

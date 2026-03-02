@@ -31,7 +31,7 @@ export default async function PostsPage({
     const search = params?.search || "";
     const author = params?.author ?? "all";
     const hrefPage = (p: number) => `/posts?page=${p}&search=${search}&author=${author}`;
-    const { items, total, pageSize, hasPrev, hasNext } = await getAllPosts(page, 9, search, author);
+    const { items, total: _total, pageSize: _pageSize, hasPrev, hasNext } = await getAllPosts(page, 9, search, author);
     const authors = await getPostAuthors();
 
 

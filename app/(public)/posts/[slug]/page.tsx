@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { ComponentPropsWithoutRef } from 'react';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import React from "react";
+
 
 export const metadata = {
   title: "Post Page",
@@ -40,6 +42,61 @@ export default async function PostPage({ params }: Params) {
 
     const published = new Date(post.publishedAt).toISOString().slice(0, 10);
     const user = await getUserById(post.authorId);
+
+
+    // markdownリンクカード作成
+    const isBareUrl = (s: string) => /^(https?:\/\/|\/\/)\S+$/i.test(s.trim());
+    
+    const toText = (node: unknown): string | null => {
+        if (typeof node === "string") return node;
+        if (Array.isArray(node) && node.every((x) => typeof x === "string")) {
+            return node.join("");
+        }
+        return null;
+    };
+    
+    const extractSingleBareUrl = (children: React.ReactNode): string | null => {
+        const list = Array.isArray(children) ? children : [children];
+        const filtered = list.filter((c) => c !== "\n" && c !== null && c !== undefined);
+    
+        if (filtered.length !== 1) return null;
+    
+        const only = filtered[0];
+    
+        // まれに "https://..." が素の文字列で来るケース
+        if (typeof only === "string" && isBareUrl(only)) return only.trim();
+    
+        // <a>（ただしあなたの a コンポーネントに置き換わってても props は見える）
+        if (React.isValidElement(only)) {
+            const props = only.props as { href?: unknown; children?: unknown };
+            const href = typeof props.href === "string" ? props.href.trim() : null;
+            const text = toText(props.children)?.trim() ?? null;
+            if (!href || !text) return null;
+            if (href === text && isBareUrl(href)) return href;
+        }
+        return null;
+    };
+    
+    function LinkCard({ url }: { url: string }) {
+        let host = "";
+        try {
+            host = new URL(url).host;
+        } catch {}
+    
+        return (
+            <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="my-4 block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] hover:opacity-95 transition"
+            >
+                <div className="p-4">
+                    <div className="text-xs opacity-70">{host}</div>
+                    <div className="mt-1 break-all font-semibold">{url}</div>
+                </div>
+            </a>
+        );
+    };
 
     
     return (
@@ -159,19 +216,38 @@ export default async function PostPage({ params }: Params) {
                         },
 
                         // リンク: 内部は <Link>、外部は <a target="_blank"> に自動振り分け
+                        // a: (props) => {
+                        //     const { href, children, ...rest } = props as ComponentPropsWithoutRef<"a">;
+                        //     const h = typeof href === "string" ? href : "";
+                        //     const isExternal =
+                        //     /^https?:\/\//i.test(h) || h.startsWith("//");
+                        //     if (isExternal) {
+                        //         return (
+                        //             <a
+                        //                 href={h}
+                        //                 target="_blank"
+                        //                 rel="noopener noreferrer"
+                        //                 {...rest}
+                        //                 >
+                        //                 {children}
+                        //             </a>
+                        //         );
+                        //     }
+                        //     // 内部リンクは Next Link
+                        //     return (
+                        //         <Link href={h || "#"} {...rest}>
+                        //             {children}
+                        //         </Link>
+                        //     );
+                        // },
                         a: (props) => {
-                            const { href, children, ...rest } = props as ComponentPropsWithoutRef<"a">;
+                            const { href, children, node, ...rest } = props as ComponentPropsWithoutRef<"a"> & { node?: unknown };
                             const h = typeof href === "string" ? href : "";
-                            const isExternal =
-                            /^https?:\/\//i.test(h) || h.startsWith("//");
+                            const isExternal = /^https?:\/\//i.test(h) || h.startsWith("//");
+
                             if (isExternal) {
                                 return (
-                                    <a
-                                        href={h}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        {...rest}
-                                        >
+                                    <a href={h} target="_blank" rel="noopener noreferrer" {...rest}>
                                         {children}
                                     </a>
                                 );
@@ -183,11 +259,39 @@ export default async function PostPage({ params }: Params) {
                                 </Link>
                             );
                         },
+                        p: ({ children, node, ...rest }) => {
+                            const url = extractSingleBareUrl(children);
+                            if (url) return <LinkCard url={url} />;
+                            return <p {...rest}>{children}</p>;
+                        },                                
                     }}
                 >
                     {post.markdown}
                 </ReactMarkdown>
             </div>
+
+            <section className="mt-10 rounded-xl border border-[var(--border)] bg-card/70 p-4 sm:p-5">
+                <p className="text-xs opacity-60 mb-3">Author</p>
+                <div className="flex items-center gap-2 mb-3">
+                    {user?.pictureUrl ? (
+                        <Image
+                            src={user.pictureUrl}
+                            alt={user.displayName}
+                            className="w-6 h-6 rounded-full"
+                        />
+                    ) : (
+                        <div className="w-6 h-6 rounded-full bg-[var(--accent-cyan)] flex items-center justify-center text-xs font-bold text-black">
+                            {user?.displayName.charAt(0).toUpperCase() ?? '?'}
+                        </div>
+                    )}
+                    <span className="text-xs opacity-80">
+                        {user?.displayName ?? '不明'}
+                    </span>
+                </div>
+                <p className="text-sm opacity-75 leading-relaxed whitespace-pre-wrap">
+                    {user?.bio?.trim() ? user.bio : "プロフィールはまだ設定されていません。"}
+                </p>
+            </section>
 
             {/* フッター ナビ */}
             <div className="mt-10 flex items-center justify-between">
@@ -203,4 +307,3 @@ export default async function PostPage({ params }: Params) {
         </main>
     )
 }
-

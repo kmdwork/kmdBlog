@@ -37,7 +37,7 @@ export default async function ManagementPostsPage(
     const search = params?.search || "";    
     const author = params?.author ?? "all";
     const hrefPage = (p: number) => `/management/posts?page=${p}&search=${search}&author=${author}`;
-    const { items, total, pageSize, hasPrev, hasNext } = await getManagementAllPosts(page, 9, search, author);
+    const { items, total:_total, pageSize:_pageSize, hasPrev, hasNext } = await getManagementAllPosts(page, 9, search, author);
     const authors = await getManagementPostAuthors();
     
     return (

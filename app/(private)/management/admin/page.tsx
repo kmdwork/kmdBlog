@@ -11,6 +11,7 @@ import Link from "next/link";
 export default async function AdminPage() {
     const session = await auth();                       // SSRで現在のセッション取得
     if (!session || session.user.role !== "admin") {
+        return (
               <div className="min-h-screen bg-app text-app font-mono">
                   <div className="flex justify-center text-center text-xl sm:text-2xl leading-relaxed">
                       ログインしていないか正しいユーザーではありません。<br />
@@ -18,6 +19,7 @@ export default async function AdminPage() {
                       <Link href="/">戻る</Link>
                   </div>
               </div>        
+        );
     }
 
 

@@ -316,7 +316,8 @@ export async function getAllPosts(page: number, pageSize = 9, search: string, au
             .where(
                 and(
                     lte(posts.publishedAt, now),
-                    isNotNull(posts.publishedAt)
+                    isNotNull(posts.publishedAt),
+                    authorFilter ?? undefined
                 )
             )
         :
@@ -331,6 +332,7 @@ export async function getAllPosts(page: number, pageSize = 9, search: string, au
                 and(
                     lte(posts.publishedAt, now),
                     isNotNull(posts.publishedAt),
+                    authorFilter ?? undefined,
                     or(
                         like(posts.title, `%${q}%`),
                         like(posts.slug, `%${q}%`),
@@ -472,6 +474,9 @@ export async function getManagementAllPosts(page: number, pageSize = 9, search: 
             await db
                 .select({ total: sql<number>`count(*)` })
                 .from(posts)
+                .where(
+                    authorFilter ?? undefined
+                )
             :
             await db
                 .select({ 
@@ -481,10 +486,13 @@ export async function getManagementAllPosts(page: number, pageSize = 9, search: 
                 .leftJoin(postsTags, eq(posts.id, postsTags.postId))
                 .leftJoin(tags, eq(postsTags.tagId, tags.id))
                 .where(
-                    or(
-                        like(posts.title, `%${search}%`),
-                        like(posts.slug, `%${search}%`),
-                        like(tags.name, `%${search}%`)
+                    and(
+                        or(
+                            like(posts.title, `%${search}%`),
+                            like(posts.slug, `%${search}%`),
+                            like(tags.name, `%${search}%`)
+                        ),
+                        authorFilter ?? undefined
                     )
                 )
             ;

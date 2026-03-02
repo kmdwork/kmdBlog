@@ -162,7 +162,7 @@ export default function HomePage() {
           <div className="grid gap-6 md:grid-cols-3">
             {/* X */}
             <Link
-              href="https://x.com/your_handle"
+              href="https://x.com/kmd483471399025"
               className="
                 group block
                 bg-card border border-[var(--border)] rounded-2xl

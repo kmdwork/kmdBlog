@@ -11,7 +11,7 @@ import rehypeSanitize from "rehype-sanitize";
 import Image from "next/image";
 import { updatePostAction } from "@/lib/actions/updatePost";
 import { deletePostAction } from "@/lib/actions/deletePost";
-
+import React from "react";
 
 
 type Post = {
@@ -309,6 +309,60 @@ export default function EditPost({ post, user }: EditPostProps) {
         return local.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
     }
     
+
+    // markdownリンクカード作成
+    const isBareUrl = (s: string) => /^(https?:\/\/|\/\/)\S+$/i.test(s.trim());
+
+    const toText = (node: unknown): string | null => {
+        if (typeof node === "string") return node;
+        if (Array.isArray(node) && node.every((x) => typeof x === "string")) {
+            return node.join("");
+        }
+        return null;
+    };
+
+    const extractSingleBareUrl = (children: React.ReactNode): string | null => {
+        const list = Array.isArray(children) ? children : [children];
+        const filtered = list.filter((c) => c !== "\n" && c !== null && c !== undefined);
+
+        if (filtered.length !== 1) return null;
+
+        const only = filtered[0];
+
+        // まれに "https://..." が素の文字列で来るケース
+        if (typeof only === "string" && isBareUrl(only)) return only.trim();
+
+        // <a>（ただしあなたの a コンポーネントに置き換わってても props は見える）
+        if (React.isValidElement(only)) {
+            const props = only.props as { href?: unknown; children?: unknown };
+            const href = typeof props.href === "string" ? props.href.trim() : null;
+            const text = toText(props.children)?.trim() ?? null;
+            if (!href || !text) return null;
+            if (href === text && isBareUrl(href)) return href;
+        }
+        return null;
+    };
+
+    function LinkCard({ url }: { url: string }) {
+        let host = "";
+        try {
+            host = new URL(url).host;
+        } catch {}
+
+        return (
+            <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="my-4 block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] hover:opacity-95 transition"
+            >
+                <div className="p-4">
+                    <div className="text-xs opacity-70">{host}</div>
+                    <div className="mt-1 break-all font-semibold">{url}</div>
+                </div>
+            </a>
+        );
+    }
 
 
     return (
@@ -617,51 +671,53 @@ export default function EditPost({ post, user }: EditPostProps) {
                             remarkPlugins={[remarkGfm]}
                             rehypePlugins={[rehypeSanitize]}
                             components={{
-                            img: (props) => {
-                                const { src, alt } = props as ComponentPropsWithoutRef<"img">;
-                                if (typeof src !== "string" || src.length === 0) return null;
-                                // alt の中から |w=数字 を抽出（例: "説明|w=480"）
-                                const [altText, sizeSpec] = (alt ?? "").split("|", 2);
-                                const widthMatch = sizeSpec?.match(/w=(\d{2,4})/);
-                                const width = widthMatch ? parseInt(widthMatch[1], 10) : undefined;
-                                const resolvedSrc = src.startsWith("/")
-                                    ? `${process.env.APP_ORIGIN ?? "https://dev.kmdworks.com"}${src}`
-                                    : src;
-                                return (
-                                    <div className="flex justify-center my-4">
-                                        <Image
-                                            src={resolvedSrc}
-                                            alt={altText?.trim() ?? ""}
-                                            width={width ? width : undefined}                                        
-                                            className="rounded-lg border border-[var(--border)] h-auto"
-                                        />
-                                        
-                                    </div>
-                                );
-                            },
-                            a: (props) => {
-                                const { href, children, ...rest } = props as ComponentPropsWithoutRef<"a">;
-                                const h = typeof href === "string" ? href : "";
-                                const isExternal =
-                                /^https?:\/\//i.test(h) || h.startsWith("//");
-                                if (isExternal) {
+                                img: (props) => {
+                                    const { src, alt } = props as ComponentPropsWithoutRef<"img">;
+                                    if (typeof src !== "string" || src.length === 0) return null;
+                                    // alt の中から |w=数字 を抽出（例: "説明|w=480"）
+                                    const [altText, sizeSpec] = (alt ?? "").split("|", 2);
+                                    const widthMatch = sizeSpec?.match(/w=(\d{2,4})/);
+                                    const width = widthMatch ? parseInt(widthMatch[1], 10) : undefined;
+                                    const resolvedSrc = src.startsWith("/")
+                                        ? `${process.env.APP_ORIGIN ?? "https://dev.kmdworks.com"}${src}`
+                                        : src;
                                     return (
-                                        <a
-                                            href={h}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            {...rest}
-                                            >
+                                        <div className="flex justify-center my-4">
+                                            <Image
+                                                src={resolvedSrc}
+                                                alt={altText?.trim() ?? ""}
+                                                width={width ? width : undefined}                                        
+                                                className="rounded-lg border border-[var(--border)] h-auto"
+                                            />
+                                            
+                                        </div>
+                                    );
+                                },
+                                a: (props) => {
+                                    const { href, children, node, ...rest } = props as ComponentPropsWithoutRef<"a"> & { node?: unknown };
+                                    const h = typeof href === "string" ? href : "";
+                                    const isExternal = /^https?:\/\//i.test(h) || h.startsWith("//");
+
+                                    if (isExternal) {
+                                        return (
+                                        <a href={h} target="_blank" rel="noopener noreferrer" {...rest}>
                                             {children}
                                         </a>
-                                    );
+                                        );
                                     }
-                                return (
-                                    <Link href={h || "#"} {...rest}>
+
+                                    return (
+                                        <Link href={h || "#"} {...rest}>
                                         {children}
-                                    </Link>
-                                );
-                            },
+                                        </Link>
+                                    );
+                                },
+                                p: ({ children, node, ...rest }) => {
+                                    const url = extractSingleBareUrl(children);
+                                    if (url) return <LinkCard url={url} />;
+                                    return <p {...rest}>{children}</p>;
+                                },                                
+
                             }}
                         >
                             {content || "（プレビューする内容がありません）"}
