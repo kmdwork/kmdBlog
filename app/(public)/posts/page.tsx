@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Footer from "@/components/layouts/Footer"
 import PublicHeader from "@/components/layouts/PublicHeader"
 import SearchField from "@/components/layouts/SearchField";
@@ -6,9 +7,92 @@ import { getPostAuthors } from "@/lib/users";
 import Image from "next/image";
 import Link from "next/link";
 
-export const metadata = {
-  title: "All Posts",
+type PostsSearchParams = {
+    page?: string;
+    search?: string;
+    author?: string;
 };
+
+type PageProps = {
+    searchParams: Promise<PostsSearchParams>;
+};
+
+function normalizeOrigin(raw: string): string {
+    return raw.replace(/\/+$/, "");
+}
+
+function resolvePage(rawPage?: string): number {
+    const n = Number(rawPage ?? "1");
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+    const params = await searchParams;
+    const origin = normalizeOrigin(process.env.APP_ORIGIN ?? "https://kmdworks.com");
+    const page = resolvePage(params?.page);
+    const search = (params?.search ?? "").trim();
+    const author = params?.author ?? "all";
+
+    const hasSearch = search.length > 0;
+    const hasAuthor = author !== "all" && author.trim() !== "";
+
+    const canonicalParams = new URLSearchParams();
+    if (!hasSearch && !hasAuthor && page > 1) {
+        canonicalParams.set("page", String(page));
+    }
+    const canonical = canonicalParams.toString()
+        ? `${origin}/posts?${canonicalParams.toString()}`
+        : `${origin}/posts`;
+
+    let title = "All Posts";
+    if (hasSearch) {
+        title = `「${search}」の検索結果`;
+    } else if (hasAuthor) {
+        title = "投稿一覧（著者絞り込み）";
+    } else if (page > 1) {
+        title = `All Posts - Page ${page}`;
+    }
+
+    const description = hasSearch
+        ? `「${search}」の検索結果一覧です。`
+        : hasAuthor
+            ? "著者で絞り込んだ投稿一覧です。"
+            : "公開中の投稿一覧です。";
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical,
+        },
+        robots: hasSearch || hasAuthor
+            ? {
+                index: false,
+                follow: true,
+            }
+            : undefined,
+        openGraph: {
+            type: "website",
+            url: canonical,
+            title,
+            description,
+            images: [
+                {
+                    url: `${origin}/ogp.jpg`,
+                    width: 1200,
+                    height: 630,
+                    alt: "KMD WORKS",
+                },
+            ],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: [`${origin}/ogp.jpg`],
+        },
+    };
+}
 
 // const mockPosts = Array.from({ length: 9 }).map((_, i) => ({
 //   title: `Post Title ${i + 1}`,
@@ -23,9 +107,7 @@ export const revalidate = 60 // 任意: 1分キャッシュ
 
 export default async function PostsPage({ 
         searchParams 
-    } : {
-        searchParams: Promise<{ page?: string; search?: string; author?: string}>
-    }) {
+    } : PageProps) {
     const params = await searchParams;
     const page = Math.max(1, Number(params?.page ?? '1'));
     const search = params?.search || "";

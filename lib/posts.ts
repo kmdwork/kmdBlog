@@ -157,7 +157,6 @@ export async function getManagementPost(slug: string)  {
 export async function getHomePost():Promise<HomePost[] | null> {
     try {
         const db = getDb();
-        // const db = await getDbAsync();
         const now = new Date();
         const rows = await db
             .select({

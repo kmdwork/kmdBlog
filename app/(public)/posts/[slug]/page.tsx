@@ -1,18 +1,15 @@
+import type { Metadata } from "next";
 import Footer from '@/components/layouts/Footer';
 import PublicHeader from '@/components/layouts/PublicHeader';
 import { getPost } from '@/lib/posts'
 import { getUserById } from '@/lib/users';
 import Image from 'next/image';
 import Link from 'next/link';
+import { notFound } from "next/navigation";
 import { ComponentPropsWithoutRef } from 'react';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import React from "react";
-
-
-export const metadata = {
-  title: "Post Page",
-};
 
 type Params = {
     params: Promise<{slug: string}>
@@ -20,24 +17,82 @@ type Params = {
 
 export const revalidate = 60 // 任意: 1分キャッシュ
 
+function buildDescription(markdown: string): string {
+    const plain = markdown
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/`[^`]*`/g, " ")
+        .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/[*_>~-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (!plain) return "記事の詳細ページです。";
+    return plain.slice(0, 140);
+}
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+    const { slug } = await params;
+    const post = await getPost(slug);
+    const origin = process.env.APP_ORIGIN ?? "https://kmdworks.com";
+
+    if (!post) {
+        return {
+            title: "記事が見つかりません",
+            robots: {
+                index: false,
+                follow: false,
+            },
+        };
+    }
+
+    const canonical = `${origin}/posts/${post.slug}`;
+    const description = buildDescription(post.markdown);
+    const tagList = post.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+    return {
+        title: post.title,
+        description,
+        alternates: {
+            canonical,
+        },
+        openGraph: {
+            type: "article",
+            url: canonical,
+            title: post.title,
+            description,
+            siteName: "KMD WORKS",
+            locale: "ja_JP",
+            publishedTime: new Date(post.publishedAt).toISOString(),
+            tags: tagList.length > 0 ? tagList : undefined,
+            images: [
+                {
+                    url: `${origin}/ogp.jpg`,
+                    width: 1200,
+                    height: 630,
+                    alt: post.title,
+                },
+            ],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: post.title,
+            description,
+            images: [`${origin}/ogp.jpg`],
+        },
+    };
+}
+
 export default async function PostPage({ params }: Params) {
     const { slug } = await params;
     const post = await getPost(slug);
 
     if (!post) {
-        return (
-            <main className="min-h-screen bg-app text-app font-mono">
-                {/* 共有ヘッダー（簡易） */}
-                <PublicHeader />
-
-                <section className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-                    <p className="opacity-80">記事が見つかりませんでした。</p>
-                    <Link href="/posts" className="mt-4 inline-block text-[var(--accent-cyan)] hover:text-[var(--accent-pink)]">
-                        ← 一覧に戻る
-                    </Link>
-                </section>
-            </main>
-        )
+        notFound();
     }
 
     const published = new Date(post.publishedAt).toISOString().slice(0, 10);

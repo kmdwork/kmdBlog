@@ -1,4 +1,5 @@
 // app/page.tsx
+import type { Metadata } from "next";
 import HomePagePosts from "@/components/HomePagePosts"
 import ComingSoon from "@/components/layouts/ComingSoon"
 import Footer from "@/components/layouts/Footer"
@@ -9,6 +10,45 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 export const experimental_ppr = true;
+
+function normalizeOrigin(raw: string): string {
+  return raw.replace(/\/+$/, "");
+}
+
+export function generateMetadata(): Metadata {
+  const origin = normalizeOrigin(process.env.APP_ORIGIN ?? "https://kmdworks.com");
+  const description = "KMD WORKS の公式サイト。Next.js × Cloudflare で構築したポートフォリオ兼ブログ。";
+
+  return {
+    title: {
+      absolute: "KMD WORKS",
+    },
+    description,
+    alternates: {
+      canonical: `${origin}/`,
+    },
+    openGraph: {
+      type: "website",
+      url: `${origin}/`,
+      title: "KMD WORKS",
+      description,
+      images: [
+        {
+          url: `${origin}/ogp.jpg`,
+          width: 1200,
+          height: 630,
+          alt: "KMD WORKS",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "KMD WORKS",
+      description,
+      images: [`${origin}/ogp.jpg`],
+    },
+  };
+}
 
 const colorMap = {
   cyan:  { border: "border-cyan-400",  text: "text-cyan-400",  chipBg: "bg-cyan-400/20",  chipBorder: "border-cyan-400/50",  gradFrom: "from-cyan-900/20" },
@@ -110,7 +150,7 @@ export default function HomePage() {
 
       {/* Posts */}
       {/* 動的島：ここだけリクエスト時にSSRされる */}
-      <Suspense fallback={<HomePagePosts />}>
+      <Suspense fallback={<section id="posts" className="max-w-7xl mx-auto px-6 py-20 text-sm opacity-70">読み込み中...</section>}>
         <HomePagePosts />
       </Suspense>
 
