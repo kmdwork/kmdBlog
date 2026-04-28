@@ -3,6 +3,7 @@ import Footer from "@/components/layouts/Footer";
 import PrivateHeader from "@/components/layouts/PrivateHeader";
 import SearchField from "@/components/layouts/SearchField";
 import { getManagementAllPosts } from "@/lib/posts";
+import { getPostHeroTheme } from "@/lib/postHeroTheme";
 import { getManagementPostAuthors } from "@/lib/users";
 import Image from "next/image";
 import Link from "next/link";
@@ -56,7 +57,7 @@ export default async function ManagementPostsPage(
                     </div>
 
                     {/* 最小のフィルタUI（ダミー） */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full sm:w-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full sm:w-auto ">
                         <SearchField defaultValue={search} defaultAuthor={author} authors={authors}/>
                         <Link
                             href="/management/posts/createposts"
@@ -74,53 +75,66 @@ export default async function ManagementPostsPage(
                         <p className="opacity-70">No posts.</p>
                     ) : (
                         <ul className="grid gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {items.map(p => (
-                            <li key={p.slug} className="bg-card border border-[var(--border)] rounded-xl hover:shadow-lg transition group">
-                                
-                                <Link href={`/management/posts/${p.slug}/editpost`} className="block p-5 sm:p-6">
-                                    {/* ヘッダー部分：公開日と著者 */}
-                                    <div className="flex items-center justify-between mb-3">
-                                        <time className="text-xs opacity-60">公開日：{p.publishedAt}</time>
-                                        <div className="flex items-center gap-2 text-xs opacity-80">
-                                            {p.author?.pictureUrl ? (
-                                                <Image 
-                                                    src={p.author.pictureUrl} 
-                                                    alt={p.author.displayName}
-                                                    width={24}
-                                                    height={24}
-                                                    className="w-6 h-6 rounded-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-6 h-6 rounded-full bg-[var(--accent-cyan)] flex items-center justify-center text-xs font-bold text-black">
-                                                    {p.author?.displayName?.charAt(0).toUpperCase() ?? '?'}
-                                                </div>
-                                            )}
-                                            <span>{p.author?.displayName ?? '不明'}</span>
+                            {items.map(p => {
+                                const heroTheme = getPostHeroTheme({
+                                    slug: p.slug,
+                                    tags: p.tags,
+                                });
+
+                                return (
+                                <li key={p.slug} className="bg-card border border-[var(--border)] rounded-xl hover:shadow-lg transition group">
+                                    
+                                    <Link href={`/management/posts/${p.slug}/editpost`} className="block p-5 sm:p-6">
+                                        {/* ヘッダー部分：公開日と著者 */}
+                                        <div className="flex items-center justify-between mb-3">
+                                            <time className="text-xs opacity-60">公開日：{p.publishedAt}</time>
+                                            <div className="flex items-center gap-2 text-xs opacity-80">
+                                                {p.author?.pictureUrl ? (
+                                                    <Image 
+                                                        src={p.author.pictureUrl} 
+                                                        alt={p.author.displayName}
+                                                        width={24}
+                                                        height={24}
+                                                        className="w-6 h-6 rounded-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-6 h-6 rounded-full bg-[var(--accent-cyan)] flex items-center justify-center text-xs font-bold text-black">
+                                                        {p.author?.displayName?.charAt(0).toUpperCase() ?? '?'}
+                                                    </div>
+                                                )}
+                                                <span>{p.author?.displayName ?? '不明'}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    {/* タイトル */}
-                                    <h3 className="text-lg sm:text-xl font-bold mb-4 group-hover:text-[var(--accent-cyan)]">
-                                        {p.title}
-                                    </h3>
-                                    
-                                    {/* タグ */}
-                                    <div className="flex flex-wrap gap-2">
-                                        {p.tags.length === 0 ? (
-                                            <span className="text-xs px-2 py-1 rounded border border-[var(--border)] opacity-60">
-                                                no-tags
-                                            </span>
-                                        ) : (
-                                            p.tags.map(t => (
-                                                <span key={t} className="text-xs px-2 py-1 rounded border border-[var(--border)] bg-[color:rgba(34,211,238,0.08)]">
-                                                    {t}
+
+                                        <div className={`mb-4 h-36 rounded-lg border border-black flex items-center justify-center text-center px-4 ${heroTheme.bgClass} ${heroTheme.textClass}`}>
+                                            <p className="font-black text-xl sm:text-2xl leading-tight break-words [font-family:var(--font-geist-sans)]">
+                                                {p.title}
+                                            </p>
+                                        </div>
+                                        
+                                        {/* タイトル */}
+                                        <h3 className="text-lg sm:text-xl font-bold mb-4 group-hover:text-[var(--accent-cyan)]">
+                                            {p.title}
+                                        </h3>
+                                        
+                                        {/* タグ */}
+                                        <div className="flex flex-wrap gap-2">
+                                            {p.tags.length === 0 ? (
+                                                <span className="text-xs px-2 py-1 rounded border border-[var(--border)] opacity-60">
+                                                    no-tags
                                                 </span>
-                                            ))
-                                        )}
-                                    </div>
-                                </Link>                            
-                            </li>
-                            ))}
+                                            ) : (
+                                                p.tags.map(t => (
+                                                    <span key={t} className="text-xs px-2 py-1 rounded border border-[var(--border)] bg-[color:rgba(34,211,238,0.08)]">
+                                                        {t}
+                                                    </span>
+                                                ))
+                                            )}
+                                        </div>
+                                    </Link>                            
+                                </li>
+                                );
+                            })}
                         </ul>
                     )}
                         

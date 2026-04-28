@@ -38,11 +38,13 @@ export default function PrivateHeader({ session }:{ session?: Session | null }) 
                 {/* 左：タイトル（可縮小） */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                     <h1 className="text-xl sm:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
-                        <span className="text-[var(--accent-cyan)]">&gt;_</span>
-                        <span className="text-[var(--accent-pink)]">KMD</span>
-                        <span className="text-[var(--accent-yellow)]">Works</span>
-                        {/* サフィックスはsm以上のみ表示 */}
-                        <span className="ml-2 text-sm align-middle opacity-70 hidden sm:inline">/ management</span>
+                        <Link href="/" className="inline-block">
+                            <span className="text-[var(--accent-cyan)]">&gt;_</span>
+                            <span className="text-[var(--accent-pink)]">KMD</span>
+                            <span className="text-[var(--accent-yellow)]">Works</span>
+                            {/* サフィックスはsm以上のみ表示 */}
+                            <span className="ml-2 text-sm align-middle opacity-70 hidden sm:inline">/ management</span>
+                        </Link>
                     </h1>
                     </div>
 

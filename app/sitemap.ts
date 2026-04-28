@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { and, desc, isNotNull, lte } from "drizzle-orm";
+import { and, desc, isNotNull, lte, notLike, like } from "drizzle-orm";
 import { posts } from "@/db/schema";
 import { getDbAsync } from "@/lib/db";
 
@@ -24,6 +24,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .where(
             and(
                 lte(posts.publishedAt, now),
+                isNotNull(posts.publishedAt),
+                notLike(posts.slug, "works-case-%")
+            )
+        )
+        .orderBy(desc(posts.publishedAt));
+
+    const workRows = await db
+        .select({
+            slug: posts.slug,
+            publishedAt: posts.publishedAt,
+            updatedAt: posts.updatedAt,
+        })
+        .from(posts)
+        .where(
+            and(
+                like(posts.slug, "works-case-%"),
+                lte(posts.publishedAt, now),
                 isNotNull(posts.publishedAt)
             )
         )
@@ -36,9 +53,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: 1,
         },
         {
+            url: `${origin}/about`,
+            changeFrequency: "monthly",
+            priority: 0.7,
+        },
+        {
             url: `${origin}/posts`,
             changeFrequency: "daily",
             priority: 0.9,
+        },
+        {
+            url: `${origin}/works`,
+            changeFrequency: "weekly",
+            priority: 0.9,
+        },
+        {
+            url: `${origin}/terms`,
+            changeFrequency: "yearly",
+            priority: 0.3,
+        },
+        {
+            url: `${origin}/privacy-policy`,
+            changeFrequency: "yearly",
+            priority: 0.3,
         },
     ];
 
@@ -49,5 +86,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
     }));
 
-    return [...staticRoutes, ...postRoutes];
+    const workRoutes: MetadataRoute.Sitemap = workRows.map((row) => ({
+        url: `${origin}/works/${row.slug}`,
+        lastModified: row.updatedAt ?? row.publishedAt ?? undefined,
+        changeFrequency: "monthly",
+        priority: 0.8,
+    }));
+
+    return [...staticRoutes, ...postRoutes, ...workRoutes];
 }

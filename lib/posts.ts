@@ -19,6 +19,7 @@ export type HomePost = {
     title: string
     slug: string
     publishedAt: string
+    tags: string[]
 }
 
 // https://qiita.com/hikagami/items/254e021ad07d89fa6ae0　参考
@@ -160,6 +161,8 @@ export async function getHomePost():Promise<HomePost[] | null> {
         const now = new Date();
         const rows = await db
             .select({
+                id: posts.id,
+
                 title: posts.title,
                 slug: posts.slug,
                 publishedAt: posts.publishedAt,
@@ -170,12 +173,32 @@ export async function getHomePost():Promise<HomePost[] | null> {
             .limit(3)
             
         if (!rows.length) return null;
+        const postIds = rows.map(r => r.id);
+        let tagMap = new Map<number, string[]>();
+        const tagRows = await db
+            .select({
+                postId: postsTags.postId,
+                tagName: tags.name,
+            })
+            .from(postsTags)
+            .innerJoin(tags, eq(postsTags.tagId, tags.id))
+            .where(inArray(postsTags.postId, postIds))
+
+        tagMap = tagRows.reduce((m, r) => {
+            const arr = m.get(r.postId) ?? []
+            arr.push(r.tagName)
+            m.set(r.postId, arr)
+            return m
+        }, new Map<number, string[]>())
+
+
         const uiPosts = rows.map((row) => ({
             title: row.title,
             slug: row.slug,
             publishedAt: row.publishedAt
                 ? row.publishedAt.toISOString().split('T')[0]
                 : '未定',
+            tags: tagMap.get(row.id) ?? [],
         }))
 
         return uiPosts;
@@ -184,7 +207,6 @@ export async function getHomePost():Promise<HomePost[] | null> {
         console.error('getHomePost error:', err);
         throw err;
     }
-
 }
 
 // 閲覧者用一覧投稿取得

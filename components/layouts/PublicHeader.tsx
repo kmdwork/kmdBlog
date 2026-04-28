@@ -4,8 +4,9 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Link from "next/link";
 
 const navItems = [
-    { label: "INIT", href: "/" },               // 全ロール
+    { label: "ABOUT", href: "/#about" },        // 全ロール
     { label: "POSTS", href: "/posts" },         // 全ロール（投稿管理想定）
+    { label: "WORKS", href: "/works" },         // 全ロール（投稿管理想定）
 ];
 
 
@@ -17,9 +18,11 @@ export default function PublicHeader() {
             <nav className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
                 {/* タイトル：スマホは一段小さく */}
                 <h1 className="text-2xl sm:text-3xl font-black whitespace-nowrap">
-                <span className="text-[var(--accent-cyan)]">&gt;_</span>
-                <span className="text-[var(--accent-pink)]">KMD</span>
-                <span className="text-[var(--accent-yellow)]">Works</span>
+                    <Link href="/" className="inline-block">
+                        <span className="text-[var(--accent-cyan)]">&gt;_</span>
+                        <span className="text-[var(--accent-pink)]">KMD</span>
+                        <span className="text-[var(--accent-yellow)]">Works</span>
+                    </Link>
                 </h1>
 
                 <div className="flex items-center gap-3 sm:gap-6 text-sm">
@@ -65,4 +68,3 @@ export default function PublicHeader() {
 
     )
 }
-

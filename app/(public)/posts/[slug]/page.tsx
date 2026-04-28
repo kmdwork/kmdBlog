@@ -255,7 +255,7 @@ export default async function PostPage({ params }: Params) {
                             const widthMatch = sizeSpec?.match(/w=(\d{2,4})/);
                             const width = widthMatch ? parseInt(widthMatch[1], 10) : undefined;
                             const resolvedSrc = src.startsWith("/")
-                                ? `${process.env.APP_ORIGIN ?? "https://dev.kmdworks.com"}${src}`
+                                ? `${process.env.APP_ORIGIN ?? "https://kmdworks.com"}${src}`
                                 : src;
                             // 外部ドメインの画像を使う場合は next.config.js の images.domains / remotePatterns を設定してください
                             return (

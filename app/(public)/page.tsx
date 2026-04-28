@@ -1,7 +1,8 @@
 // app/page.tsx
 import type { Metadata } from "next";
 import HomePagePosts from "@/components/HomePagePosts"
-import ComingSoon from "@/components/layouts/ComingSoon"
+import Image from "next/image"
+// import ComingSoon from "@/components/layouts/ComingSoon"
 import Footer from "@/components/layouts/Footer"
 import PublicHeader from "@/components/layouts/PublicHeader"
 // import { getHomePost } from "@/lib/posts"
@@ -56,10 +57,25 @@ const colorMap = {
   yellow:{ border: "border-yellow-400",text: "text-yellow-400",chipBg: "bg-yellow-400/20",chipBorder: "border-yellow-400/50",gradFrom: "from-yellow-900/20" }
 } as const
 
+
+const origin = process.env.APP_ORIGIN ?? "https://kmdworks.com";
 const projects = [
-  { title: 'NEO_SYSTEM',  color: 'cyan' as const,   tags: ['NEXT.JS','WEBGL'], href: '#' },
-  { title: 'FLUX_ENGINE', color: 'pink' as const,   tags: ['CLOUDFLARE','D1'], href: '#' },
-  { title: 'VOID_CORE',   color: 'yellow' as const, tags: ['R2','EDGE'], href: '#' },
+  { 
+    title: '『kmdworks』ポートフォリオサイト',  
+    color: 'cyan' as const, 
+    href: '/works/works-case-1', 
+    heroSrc: `${origin}/media/projects/works-case-1/hero.webp`,
+    shortdescription: 'Edge-first architecture technical blog built with Next.js',
+    techstack: 'Next.js + Cloudflare + Auth.js' 
+  },
+  { 
+    title: '『佛性寺』webサイト', 
+    color: 'pink' as const, 
+    href: '/works/works-case-2', 
+    heroSrc: `${origin}/media/projects/works-case-2/hero.webp`,
+    shortdescription: 'Corporate website designed for clear information delivery',
+    techstack: 'Astro + Cloudflare'  
+  },
 ]
 
 
@@ -107,8 +123,31 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* About */}
+      <section id="about" className="max-w-7xl mx-auto px-6 py-20">
+        <h3 className="text-3xl font-black mb-6">ABOUT <span className="text-[var(--accent-pink)]">ME</span></h3>
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          <p className="opacity-80 leading-relaxed">
+            このサイトは、個人開発や日々の学習の中で得た知見を記録する技術ブログです。<br />
+            Next.js と Cloudflare（Workers / D1 / R2）を中心に、軽量で運用しやすいモダンな構成をテーマに開発や実験を行っています。<br />
+            また、ここでは実装時に考えたことや試行錯誤の過程などをできるだけそのまま残し、学習ログとしてのPOSTも公開しています。<br />
+            <br />
+            同時に、自分の開発スタイルや技術的な関心をまとめるポートフォリオとしての役割も持たせています。<br />
+            Web開発を中心としながらも、インフラ、システム設計、電子工作、その他さまざまな分野に興味があり、<br />  
+            分野を限定せず気になったことや学んだことを幅広く発信していく予定です。
+          </p>
+          <ul className="bg-card border border-[var(--border)] rounded-xl p-6 space-y-3">
+            <li><strong>Stack:</strong> Next.js 15 / TypeScript / TailwindCSS</li>
+            <li><strong>Edge:</strong> Cloudflare Workers / D1 / R2 / KV</li>
+            <li><strong>Data:</strong> Drizzle ORM / SQL / Markdown (GFM)</li>
+            <li><strong>CI/CD:</strong> GitHub Actions / Wrangler</li>
+          </ul>
+        </div>
+      </section>
+
+
       {/* Projects */}
-      <ComingSoon enabled label="Coming soon …">
+      {/* <ComingSoon enabled label="Coming soon …"> */}
         <section id="projects" className="relative max-w-7xl mx-auto px-6 py-20">
           <div className="border-2 border-[var(--accent-cyan)] p-8 bg-card/70 rounded-2xl">
             <h3 className="text-2xl sm:text-4xl font-black mb-8 leading-tight break-words">
@@ -132,44 +171,36 @@ export default function HomePage() {
                       <span className={["text-sm", c.text].join(" ")}>[{i.toString().padStart(2,'0')}]</span>
                       <div className={["w-3 h-3 animate-pulse", c.text].join(" ")} />
                     </div>
-                    <div className={["h-48 mb-4 border rounded bg-gradient-to-br to-black/0 group-hover:brightness-110", c.chipBorder, c.gradFrom].join(" ")} />
+                    <div className={["relative h-48 mb-4 overflow-hidden border rounded bg-gradient-to-br to-black/0 group-hover:brightness-110", c.chipBorder, c.gradFrom].join(" ")}>
+                      <Image
+                        src={p.heroSrc}
+                        alt={`${p.title} hero`}
+                        fill
+                        sizes="(min-width: 768px) 33vw, 100vw"
+                        className="object-fill"
+                      />
+                    </div>
                     <h4 className={["text-xl font-black mb-2", c.text].join(" ")}>{p.title}</h4>
-                    <p className="opacity-70 text-sm mb-4">$ Advanced digital system with cutting-edge architecture</p>
+                    <p className="opacity-70 text-sm mb-4">$ {p.shortdescription}</p>
                     <div className="flex gap-2">
-                      {p.tags.map(t => (
-                        <span key={t} className={["text-xs px-2 py-1 border rounded", c.chipBg, c.text, c.chipBorder].join(" ")}>{t}</span>
-                      ))}
+                      <span className={["text-xs px-2 py-1 border rounded", c.chipBg, c.text, c.chipBorder].join(" ")}>{p.techstack}</span>
                     </div>
                   </Link>
                 )
               })}
             </div>
           </div>
+          <div className="mt-8 text-right">
+            <Link className="text-[var(--accent-cyan)] hover:text-[var(--accent-pink)]" href="/works">[VIEW_ALL]</Link>
+          </div>
         </section>
-      </ComingSoon>
+      {/* </ComingSoon> */}
 
       {/* Posts */}
       {/* 動的島：ここだけリクエスト時にSSRされる */}
       <Suspense fallback={<section id="posts" className="max-w-7xl mx-auto px-6 py-20 text-sm opacity-70">読み込み中...</section>}>
         <HomePagePosts />
       </Suspense>
-
-      {/* About */}
-      <section id="about" className="max-w-7xl mx-auto px-6 py-20">
-        <h3 className="text-3xl font-black mb-6">ABOUT <span className="text-[var(--accent-pink)]">ME</span></h3>
-        <div className="grid md:grid-cols-2 gap-8 items-start">
-          <p className="opacity-80 leading-relaxed">
-            エッジで動くWebが好きなフルスタック寄りの開発者。Next.js × Cloudflare（Workers / D1 / R2）で、
-            軽量かつ運用しやすいモダン構成を設計・実装します。学習ブログとしての透明性と、ポートフォリオとしての表現を両立させるのがテーマ。
-          </p>
-          <ul className="bg-card border border-[var(--border)] rounded-xl p-6 space-y-3">
-            <li><strong>Stack:</strong> Next.js 15 / TypeScript / TailwindCSS</li>
-            <li><strong>Edge:</strong> Cloudflare Workers / D1 / R2 / KV</li>
-            <li><strong>Data:</strong> Drizzle ORM / SQL / Markdown (GFM)</li>
-            <li><strong>CI/CD:</strong> GitHub Actions / Wrangler</li>
-          </ul>
-        </div>
-      </section>
 
       {/* CTA */}
       <section id="contact" className="max-w-7xl mx-auto px-6 py-20">
@@ -178,14 +209,14 @@ export default function HomePage() {
             LET&apos;S <span className="text-[var(--accent-yellow)]">BUILD</span> SOMETHING
           </h3>
           <p className="opacity-80 mb-10">
-            [...現在 調整中...]
-            相談、共同制作、コードレビューなど、お気軽にどうぞ。
+            [...現在 調整中...] <br />
+            相談、共同制作、コードレビューなど、お気軽にどうぞ。<br />
             X / Zenn / YouTube などで、開発ログや記事、動画を発信していきます。
           </p>
 
           {/* メールボタン */}
           <Link
-            href="mailto:you@example.com"
+            href="https://x.com/kmd483471399025"
             className="
               inline-block px-6 py-3 mb-8 font-bold uppercase border-2 rounded
               border-[var(--accent-cyan)]
@@ -195,7 +226,7 @@ export default function HomePage() {
               transition
             "
           >
-            SEND EMAIL
+            SEND MESSAGE
           </Link>
 
           {/* SNSリンク */}
@@ -252,7 +283,7 @@ export default function HomePage() {
                 Zenn
               </h4>
               <p className="mt-2 text-sm opacity-80">
-                設計メモや実装ノウハウを、記事としてじっくりまとめていきます。
+                具体的なコードやエラーコードの扱い、実装ノウハウなど、よりニッチな内容を扱った記事をまとめていきます。
               </p>
               <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent-cyan)] group-hover:text-[var(--accent-pink)]">
                 Read on Zenn
@@ -262,7 +293,7 @@ export default function HomePage() {
 
             {/* YouTube */}
             <Link
-              href="https://www.youtube.com/@your_channel"
+              href="https://www.youtube.com/@KMDworks-r7"
               className="
                 group block
                 bg-card border border-[var(--border)] rounded-2xl

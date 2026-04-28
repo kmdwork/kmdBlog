@@ -679,7 +679,7 @@ export default function EditPost({ post, user }: EditPostProps) {
                                     const widthMatch = sizeSpec?.match(/w=(\d{2,4})/);
                                     const width = widthMatch ? parseInt(widthMatch[1], 10) : undefined;
                                     const resolvedSrc = src.startsWith("/")
-                                        ? `${process.env.APP_ORIGIN ?? "https://dev.kmdworks.com"}${src}`
+                                        ? `${process.env.APP_ORIGIN ?? "https://kmdworks.com"}${src}`
                                         : src;
                                     return (
                                         <div className="flex justify-center my-4">
