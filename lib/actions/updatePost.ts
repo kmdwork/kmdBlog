@@ -22,6 +22,27 @@ type UpdateState = {
     debug?: unknown;
 };
 
+function parseJstDateTimeLocal(value: string | null): Date | null {
+    if (!value || value.trim() === "") return null;
+
+    const match = value.match(
+        /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
+    );
+    if (!match) return null;
+
+    const [, year, month, day, hour, minute] = match;
+    const utcMs = Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour) - 9,
+        Number(minute)
+    );
+
+    const date = new Date(utcMs);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
 
 export async function updatePostAction(
     prevState: UpdateState,
@@ -66,12 +87,9 @@ export async function updatePostAction(
             tags: formData.get("tags") as string,
             content: formData.get("content") as string,
             publish: formData.get("publish")  === "on",
-            publishDate: (() => {
-                const v = formData.get("publishDate") as string | null;
-                if (!v || v.trim() === "") return null; // 未入力 → null
-                const date = new Date(v);
-                return isNaN(date.getTime()) ? null : date; // 不正な値は null 扱い
-            })(),
+            publishDate: parseJstDateTimeLocal(
+                formData.get("publishDate") as string | null
+            ),
             // publishDate: String(formData.get("publishDate") ?? ""),
         };
     

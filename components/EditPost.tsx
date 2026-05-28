@@ -301,7 +301,7 @@ export default function EditPost({ post, user }: EditPostProps) {
 
 
     // date を datetime-local 用に整形する関数を作る
-    function toLocalDateTimeString(date: string | number | Date | null): string {
+    function toLocalDateTimeString(date: string | null): string {
         if (!date) return "";
         const d = new Date(date);
         // タイムゾーン補正：UTC→ローカル
@@ -399,7 +399,7 @@ export default function EditPost({ post, user }: EditPostProps) {
             <form ref={formRef} action={formAction} className="space-y-6 max-w-4xl mx-auto p-6">
                 {/* デバッグ出力 */}
                 {state.debug != null && (
-                    <pre className="text-xs bg-gray-800 text-white p-2 rounded">
+                    <pre className="text-xs bg-gray-800 text-white p-2 rounded overflow-auto">
                         {JSON.stringify(state.debug, null, 2)}
                     </pre>
                 )}

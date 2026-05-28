@@ -285,7 +285,7 @@ export default function CreatePost() {
             <h1 className="text-3xl font-bold">新規投稿</h1>
             {/* デバッグ出力 */}
             {state.debug != null && (
-                <pre className="text-xs bg-gray-800 text-white p-2 rounded">
+                <pre className="text-xs bg-gray-800 text-white p-2 rounded overflow-auto">
                     {JSON.stringify(state.debug, null, 2)}
                 </pre>
             )}

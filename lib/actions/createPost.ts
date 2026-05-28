@@ -24,6 +24,27 @@ type ActionState = {
     debug?: unknown,
 };
 
+function parseJstDateTimeLocal(value: string | null): Date | null {
+    if (!value || value.trim() === "") return null;
+
+    const match = value.match(
+        /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
+    );
+    if (!match) return null;
+
+    const [, year, month, day, hour, minute] = match;
+    const utcMs = Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour) - 9,
+        Number(minute)
+    );
+
+    const date = new Date(utcMs);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
 
 export async function createPostAction(
     prevState: ActionState,
@@ -65,12 +86,9 @@ export async function createPostAction(
         tags: formData.get("tags") as string,
         content: formData.get("content") as string,
         publish: formData.get("publish")  === "on",
-        publishDate: (() => {
-            const v = formData.get("publishDate") as string | null;
-            if (!v || v.trim() === "") return null; // 未入力 → null
-            const date = new Date(v);
-            return isNaN(date.getTime()) ? null : date; // 不正な値は null 扱い
-        })(),
+        publishDate: parseJstDateTimeLocal(
+            formData.get("publishDate") as string | null
+        ),
     };
 
     
@@ -105,7 +123,7 @@ export async function createPostAction(
     const publishedAt: Date | null =
         raw.publish
             ? (raw.publishDate
-                ? new Date(raw.publishDate) // ユーザー指定日時
+                ? raw.publishDate // ユーザー指定日時
                 : new Date()                // 今この瞬間
             )
             : null;

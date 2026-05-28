@@ -113,7 +113,7 @@ export async function getManagementPost(slug: string)  {
         if (!row) return null;
         let date: string | null = null;
 
-        date = row.publishedAt ? row.publishedAt.toString() : null;
+        date = row.publishedAt ? row.publishedAt.toISOString() : null;
     
         // R2
         // let md: string | null = null;
