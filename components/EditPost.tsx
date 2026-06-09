@@ -2,16 +2,12 @@
 
 import { uploadImageAction } from "@/lib/actions/uploadImage";
 import { useActionState, useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownEditor, type MarkdownEditorHandle } from "@/components/MarkdownEditor";
+import { MarkdownRenderer, markdownProseClassName } from "@/lib/markdown";
 // import Image from "next/image";
-import Link from "next/link";
-import { ComponentPropsWithoutRef } from 'react';
-import rehypeSanitize from "rehype-sanitize";
 import Image from "next/image";
 import { updatePostAction } from "@/lib/actions/updatePost";
 import { deletePostAction } from "@/lib/actions/deletePost";
-import React from "react";
 
 
 type Post = {
@@ -71,31 +67,6 @@ export default function EditPost({ post, user }: EditPostProps) {
             uploadImageAction,
             { ok: false } // 初期値
         );
-    
-        // md内に画像のurlを挿入
-        function insertAtCursor(
-            textarea: HTMLTextAreaElement | null,
-            insertText: string,
-            setContent: (v: string) => void
-        ) {
-            if (!textarea) return;
-            
-            const start = textarea.selectionStart ?? textarea.value.length;
-            const end = textarea.selectionEnd ?? textarea.value.length;
-            const before = textarea.value.slice(0, start);
-            const after = textarea.value.slice(end);
-            const next = before + insertText + after;
-            
-            setContent(next);
-            
-            // React の状態更新後にカーソル位置を設定
-            // より確実に DOM 更新を待つ
-            setTimeout(() => {
-                const pos = start + insertText.length;
-                textarea.setSelectionRange(pos, pos);
-                textarea.focus();
-            }, 0);
-        }
     
         // 画像ファイルが選択されたら、FormData を組んで uploadAction を呼ぶ
         async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -231,7 +202,7 @@ export default function EditPost({ post, user }: EditPostProps) {
         // 別のuseEffectで結果を処理
         useEffect(() => {
             if (uploadState.ok && uploadState.markdown) {
-                insertAtCursor(textareaRef.current, uploadState.markdown, setContent);
+                editorRef.current?.insertText(uploadState.markdown);
             } else if (uploadState.error) {
                 alert(uploadState.error);
             }
@@ -247,7 +218,7 @@ export default function EditPost({ post, user }: EditPostProps) {
         const [content, setContent] = useState(post.markdown);
         const [tags, setTags] = useState(post.tags);
         // const [autoSlug, setAutoSlug] = useState(false); // スラッグ自動生成
-        const textareaRef = useRef<HTMLTextAreaElement>(null);
+        const editorRef = useRef<MarkdownEditorHandle>(null);
         const [publishChecked, setPublishChecked] = useState(!!post.publishedAt);
         const [publishDate, setPublishDate] = useState(
             toLocalDateTimeString(post.publishedAt) // ← 文字列
@@ -309,61 +280,6 @@ export default function EditPost({ post, user }: EditPostProps) {
         return local.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
     }
     
-
-    // markdownリンクカード作成
-    const isBareUrl = (s: string) => /^(https?:\/\/|\/\/)\S+$/i.test(s.trim());
-
-    const toText = (node: unknown): string | null => {
-        if (typeof node === "string") return node;
-        if (Array.isArray(node) && node.every((x) => typeof x === "string")) {
-            return node.join("");
-        }
-        return null;
-    };
-
-    const extractSingleBareUrl = (children: React.ReactNode): string | null => {
-        const list = Array.isArray(children) ? children : [children];
-        const filtered = list.filter((c) => c !== "\n" && c !== null && c !== undefined);
-
-        if (filtered.length !== 1) return null;
-
-        const only = filtered[0];
-
-        // まれに "https://..." が素の文字列で来るケース
-        if (typeof only === "string" && isBareUrl(only)) return only.trim();
-
-        // <a>（ただしあなたの a コンポーネントに置き換わってても props は見える）
-        if (React.isValidElement(only)) {
-            const props = only.props as { href?: unknown; children?: unknown };
-            const href = typeof props.href === "string" ? props.href.trim() : null;
-            const text = toText(props.children)?.trim() ?? null;
-            if (!href || !text) return null;
-            if (href === text && isBareUrl(href)) return href;
-        }
-        return null;
-    };
-
-    function LinkCard({ url }: { url: string }) {
-        let host = "";
-        try {
-            host = new URL(url).host;
-        } catch {}
-
-        return (
-            <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="my-4 block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] hover:opacity-95 transition"
-            >
-                <div className="p-4">
-                    <div className="text-xs opacity-70">{host}</div>
-                    <div className="mt-1 break-all font-semibold">{url}</div>
-                </div>
-            </a>
-        );
-    }
-
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto p-6">            
@@ -552,12 +468,12 @@ export default function EditPost({ post, user }: EditPostProps) {
                         {/* 本文 */}
                         <div>
                             <label className="block text-sm font-medium mb-2">本文（Markdown）*</label>
-                            <textarea
-                                ref={textareaRef}
+                            <MarkdownEditor
+                                ref={editorRef}
                                 name="content"
                                 value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                required
+                                onChange={setContent}
+                                required={true}
                                 minLength={20}
                                 className="w-full rounded border p-3 bg-transparent min-h-[400px] font-mono text-sm focus:ring-2 focus:ring-blue-500"
                                 placeholder="# 見出し&#10;&#10;本文を書く..."
@@ -660,68 +576,14 @@ export default function EditPost({ post, user }: EditPostProps) {
 
                 {mode === "preview" && (
                     <div
-                        className="prose prose-pre:bg-[#0b0f14] prose-pre:border prose-pre:border-[var(--border)]
-                            prose-img:rounded-lg prose-img:border prose-img:border-[var(--border)] max-w-none
-                            prose-a:text-[var(--accent-cyan)] hover:prose-a:text-[var(--accent-pink)]
-                            prose-hr:border-[var(--border)]
-                            prose-code:bg-[color:rgba(34,211,238,0.08)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-                            prose-table:border prose-table:border-[var(--border)] prose-th:border prose-td:border prose-td:px-3 prose-td:py-1.5"
+                        className={markdownProseClassName}
                     >
-                        <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[rehypeSanitize]}
-                            components={{
-                                img: (props) => {
-                                    const { src, alt } = props as ComponentPropsWithoutRef<"img">;
-                                    if (typeof src !== "string" || src.length === 0) return null;
-                                    // alt の中から |w=数字 を抽出（例: "説明|w=480"）
-                                    const [altText, sizeSpec] = (alt ?? "").split("|", 2);
-                                    const widthMatch = sizeSpec?.match(/w=(\d{2,4})/);
-                                    const width = widthMatch ? parseInt(widthMatch[1], 10) : undefined;
-                                    const resolvedSrc = src.startsWith("/")
-                                        ? `${process.env.APP_ORIGIN ?? "https://kmdworks.com"}${src}`
-                                        : src;
-                                    return (
-                                        <div className="flex justify-center my-4">
-                                            <Image
-                                                src={resolvedSrc}
-                                                alt={altText?.trim() ?? ""}
-                                                width={width ? width : undefined}                                        
-                                                className="rounded-lg border border-[var(--border)] h-auto"
-                                            />
-                                            
-                                        </div>
-                                    );
-                                },
-                                a: (props) => {
-                                    const { href, children, node, ...rest } = props as ComponentPropsWithoutRef<"a"> & { node?: unknown };
-                                    const h = typeof href === "string" ? href : "";
-                                    const isExternal = /^https?:\/\//i.test(h) || h.startsWith("//");
-
-                                    if (isExternal) {
-                                        return (
-                                        <a href={h} target="_blank" rel="noopener noreferrer" {...rest}>
-                                            {children}
-                                        </a>
-                                        );
-                                    }
-
-                                    return (
-                                        <Link href={h || "#"} {...rest}>
-                                        {children}
-                                        </Link>
-                                    );
-                                },
-                                p: ({ children, node, ...rest }) => {
-                                    const url = extractSingleBareUrl(children);
-                                    if (url) return <LinkCard url={url} />;
-                                    return <p {...rest}>{children}</p>;
-                                },                                
-
-                            }}
-                        >
-                            {content || "（プレビューする内容がありません）"}
-                        </ReactMarkdown>
+                        <MarkdownRenderer
+                            markdown={content}
+                            className=""
+                            sanitize
+                            emptyFallback="（プレビューする内容がありません）"
+                        />
                     </div>
                 )}
 

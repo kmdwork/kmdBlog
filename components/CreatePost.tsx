@@ -4,14 +4,10 @@ import { useActionState, useEffect, useState, useRef } from "react";
 // import { useRouter } from "next/navigation";
 // import type { CreatePostState } from "@/lib/actions/createPost";
 import { createPostAction } from "@/lib/actions/createPost";
+import { MarkdownEditor, type MarkdownEditorHandle } from "@/components/MarkdownEditor";
 import { uploadImageAction } from "@/lib/actions/uploadImage";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer, markdownProseClassName } from "@/lib/markdown";
 // import Image from "next/image";
-import Link from "next/link";
-import { ComponentPropsWithoutRef } from 'react';
-import rehypeSanitize from "rehype-sanitize";
-import Image from "next/image";
 
 
 // const initialState: CreatePostState = { ok: false };
@@ -57,31 +53,6 @@ export default function CreatePost() {
         uploadImageAction,
         { ok: false } // 初期値
     );
-
-    // md内に画像のurlを挿入
-    function insertAtCursor(
-        textarea: HTMLTextAreaElement | null,
-        insertText: string,
-        setContent: (v: string) => void
-    ) {
-        if (!textarea) return;
-        
-        const start = textarea.selectionStart ?? textarea.value.length;
-        const end = textarea.selectionEnd ?? textarea.value.length;
-        const before = textarea.value.slice(0, start);
-        const after = textarea.value.slice(end);
-        const next = before + insertText + after;
-        
-        setContent(next);
-        
-        // React の状態更新後にカーソル位置を設定
-        // より確実に DOM 更新を待つ
-        setTimeout(() => {
-            const pos = start + insertText.length;
-            textarea.setSelectionRange(pos, pos);
-            textarea.focus();
-        }, 0);
-    }
 
     // 画像ファイルが選択されたら、FormData を組んで uploadAction を呼ぶ
     async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -217,7 +188,7 @@ export default function CreatePost() {
     // 別のuseEffectで結果を処理
     useEffect(() => {
         if (uploadState.ok && uploadState.markdown) {
-            insertAtCursor(textareaRef.current, uploadState.markdown, setContent);
+            editorRef.current?.insertText(uploadState.markdown);
         } else if (uploadState.error) {
             alert(uploadState.error);
         }
@@ -232,7 +203,7 @@ export default function CreatePost() {
     const [content, setContent] = useState("");
     const [tags, setTags] = useState("");
     const [autoSlug, setAutoSlug] = useState(false); // スラッグ自動生成
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const editorRef = useRef<MarkdownEditorHandle>(null);
     // 追加: 圧縮中フラグ
     const [compressing, setCompressing] = useState(false);
     // 圧縮中　画像追加中　切り替え
@@ -409,12 +380,12 @@ export default function CreatePost() {
                     {/* 本文 */}
                     <div>
                         <label className="block text-sm font-medium mb-2">本文（Markdown）*</label>
-                        <textarea
-                            ref={textareaRef}
+                        <MarkdownEditor
+                            ref={editorRef}
                             name="content"
                             value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            required
+                            onChange={setContent}
+                            required={true}
                             minLength={20}
                             className="w-full rounded border p-3 bg-transparent min-h-[400px] font-mono text-sm focus:ring-2 focus:ring-blue-500"
                             placeholder="# 見出し&#10;&#10;本文を書く..."
@@ -516,66 +487,15 @@ export default function CreatePost() {
 
             {mode === "preview" && (
                 <div
-                    className="prose prose-pre:bg-[#0b0f14] prose-pre:border prose-pre:border-[var(--border)]
-                        prose-img:rounded-lg prose-img:border prose-img:border-[var(--border)] max-w-none
-                        prose-a:text-[var(--accent-cyan)] hover:prose-a:text-[var(--accent-pink)]
-                        prose-hr:border-[var(--border)]
-                        prose-code:bg-[color:rgba(34,211,238,0.08)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-                        prose-table:border prose-table:border-[var(--border)] prose-th:border prose-td:border prose-td:px-3 prose-td:py-1.5"
+                    className={markdownProseClassName}
                 >
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeSanitize]}
-                        components={{
-                        img: (props) => {
-                            const { src, alt } = props as ComponentPropsWithoutRef<"img">;
-                            if (typeof src !== "string" || src.length === 0) return null;
-                            // alt の中から |w=数字 を抽出（例: "説明|w=480"）
-                            const [altText, sizeSpec] = (alt ?? "").split("|", 2);
-                            const widthMatch = sizeSpec?.match(/w=(\d{2,4})/);
-                            const width = widthMatch ? parseInt(widthMatch[1], 10) : undefined;
-                            const resolvedSrc = src.startsWith("/")
-                                ? `${process.env.APP_ORIGIN ?? "https://dev.kmdworks.com"}${src}`
-                                : src;
-                            return (
-                                <div className="flex justify-center my-4">
-                                    <Image
-                                        src={resolvedSrc}
-                                        alt={altText?.trim() ?? ""}
-                                        width={width ? width : undefined}                                        
-                                        className="rounded-lg border border-[var(--border)] h-auto"
-                                    />
-                                    
-                                </div>
-                            );
-                        },
-                        a: (props) => {
-                            const { href, children, ...rest } = props as ComponentPropsWithoutRef<"a">;
-                            const h = typeof href === "string" ? href : "";
-                            const isExternal =
-                            /^https?:\/\//i.test(h) || h.startsWith("//");
-                            if (isExternal) {
-                                return (
-                                    <a
-                                        href={h}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        {...rest}
-                                        >
-                                        {children}
-                                    </a>
-                                );
-                                }
-                            return (
-                                <Link href={h || "#"} {...rest}>
-                                    {children}
-                                </Link>
-                            );
-                        },
-                        }}
-                    >
-                        {content || "（プレビューする内容がありません）"}
-                    </ReactMarkdown>
+                    <MarkdownRenderer
+                        markdown={content}
+                        className=""
+                        sanitize
+                        enableLinkCard={false}
+                        emptyFallback="（プレビューする内容がありません）"
+                    />
                 </div>
             )}
 

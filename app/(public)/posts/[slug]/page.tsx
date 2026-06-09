@@ -1,36 +1,24 @@
 import type { Metadata } from "next";
+import TableOfContents from '@/components/TableOfContents';
 import Footer from '@/components/layouts/Footer';
 import PublicHeader from '@/components/layouts/PublicHeader';
+import {
+    MarkdownRenderer,
+    extractMarkdownDescription,
+    extractTableOfContents,
+    markdownProseClassName,
+} from '@/lib/markdown';
 import { getPost } from '@/lib/posts'
 import { getUserById } from '@/lib/users';
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from "next/navigation";
-import { ComponentPropsWithoutRef } from 'react';
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import React from "react";
+import Link from 'next/link';
 
 type Params = {
     params: Promise<{slug: string}>
 }
 
 export const revalidate = 60 // 任意: 1分キャッシュ
-
-function buildDescription(markdown: string): string {
-    const plain = markdown
-        .replace(/```[\s\S]*?```/g, " ")
-        .replace(/`[^`]*`/g, " ")
-        .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-        .replace(/^#{1,6}\s+/gm, "")
-        .replace(/[*_>~-]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-
-    if (!plain) return "記事の詳細ページです。";
-    return plain.slice(0, 140);
-}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
     const { slug } = await params;
@@ -48,7 +36,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     }
 
     const canonical = `${origin}/posts/${post.slug}`;
-    const description = buildDescription(post.markdown);
+    const description = extractMarkdownDescription(post.markdown, "記事の詳細ページです。");
     const tagList = post.tags
         .split(",")
         .map((t) => t.trim())
@@ -97,63 +85,7 @@ export default async function PostPage({ params }: Params) {
 
     const published = new Date(post.publishedAt).toISOString().slice(0, 10);
     const user = await getUserById(post.authorId);
-
-
-    // markdownリンクカード作成
-    const isBareUrl = (s: string) => /^(https?:\/\/|\/\/)\S+$/i.test(s.trim());
-    
-    const toText = (node: unknown): string | null => {
-        if (typeof node === "string") return node;
-        if (Array.isArray(node) && node.every((x) => typeof x === "string")) {
-            return node.join("");
-        }
-        return null;
-    };
-    
-    const extractSingleBareUrl = (children: React.ReactNode): string | null => {
-        const list = Array.isArray(children) ? children : [children];
-        const filtered = list.filter((c) => c !== "\n" && c !== null && c !== undefined);
-    
-        if (filtered.length !== 1) return null;
-    
-        const only = filtered[0];
-    
-        // まれに "https://..." が素の文字列で来るケース
-        if (typeof only === "string" && isBareUrl(only)) return only.trim();
-    
-        // <a>（ただしあなたの a コンポーネントに置き換わってても props は見える）
-        if (React.isValidElement(only)) {
-            const props = only.props as { href?: unknown; children?: unknown };
-            const href = typeof props.href === "string" ? props.href.trim() : null;
-            const text = toText(props.children)?.trim() ?? null;
-            if (!href || !text) return null;
-            if (href === text && isBareUrl(href)) return href;
-        }
-        return null;
-    };
-    
-    function LinkCard({ url }: { url: string }) {
-        let host = "";
-        try {
-            host = new URL(url).host;
-        } catch {}
-    
-        return (
-            <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="my-4 block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] hover:opacity-95 transition"
-            >
-                <div className="p-4">
-                    <div className="text-xs opacity-70">{host}</div>
-                    <div className="mt-1 break-all font-semibold">{url}</div>
-                </div>
-            </a>
-        );
-    };
-
-    
+    const tocItems = extractTableOfContents(post.markdown);
     return (
         <main className="min-h-screen bg-app text-app font-mono">
         {/* ヘッダー（SP対応版） */}
@@ -237,93 +169,8 @@ export default async function PostPage({ params }: Params) {
             )} */}
 
             {/* Markdown本文 */}
-            <div className="prose prose-pre:bg-[#0b0f14] prose-pre:border prose-pre:border-[var(--border)] prose-img:rounded-lg prose-img:border prose-img:border-[var(--border)] max-w-none
-                            prose-a:text-[var(--accent-cyan)] hover:prose-a:text-[var(--accent-pink)]
-                            prose-hr:border-[var(--border)]
-                            prose-code:bg-[color:rgba(34,211,238,0.08)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-                            prose-table:border prose-table:border-[var(--border)] prose-th:border prose-td:border prose-td:px-3 prose-td:py-1.5">
-                <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    // 画像は next/image で描画（Markdown内の ![]() を置換）
-                    components={{
-                        // 画像: string だけ許可。string でない（Blob 等）なら描画しない。
-                        img: (props) => {
-                            const { src, alt } = props as ComponentPropsWithoutRef<"img">;
-                            if (typeof src !== "string" || src.length === 0) return null;
-                            // alt の中から |w=数字 を抽出（例: "説明|w=480"）
-                            const [altText, sizeSpec] = (alt ?? "").split("|", 2);
-                            const widthMatch = sizeSpec?.match(/w=(\d{2,4})/);
-                            const width = widthMatch ? parseInt(widthMatch[1], 10) : undefined;
-                            const resolvedSrc = src.startsWith("/")
-                                ? `${process.env.APP_ORIGIN ?? "https://kmdworks.com"}${src}`
-                                : src;
-                            // 外部ドメインの画像を使う場合は next.config.js の images.domains / remotePatterns を設定してください
-                            return (
-                                <div className="flex justify-center my-4">
-                                    <Image
-                                        src={resolvedSrc}
-                                        alt={altText?.trim() ?? ""}
-                                        width={width ? width : undefined}                                                                                
-                                        className="rounded-lg border border-[var(--border)] h-auto"
-                                    />
-                                </div>
-                            );
-                        },
-
-                        // リンク: 内部は <Link>、外部は <a target="_blank"> に自動振り分け
-                        // a: (props) => {
-                        //     const { href, children, ...rest } = props as ComponentPropsWithoutRef<"a">;
-                        //     const h = typeof href === "string" ? href : "";
-                        //     const isExternal =
-                        //     /^https?:\/\//i.test(h) || h.startsWith("//");
-                        //     if (isExternal) {
-                        //         return (
-                        //             <a
-                        //                 href={h}
-                        //                 target="_blank"
-                        //                 rel="noopener noreferrer"
-                        //                 {...rest}
-                        //                 >
-                        //                 {children}
-                        //             </a>
-                        //         );
-                        //     }
-                        //     // 内部リンクは Next Link
-                        //     return (
-                        //         <Link href={h || "#"} {...rest}>
-                        //             {children}
-                        //         </Link>
-                        //     );
-                        // },
-                        a: (props) => {
-                            const { href, children, node, ...rest } = props as ComponentPropsWithoutRef<"a"> & { node?: unknown };
-                            const h = typeof href === "string" ? href : "";
-                            const isExternal = /^https?:\/\//i.test(h) || h.startsWith("//");
-
-                            if (isExternal) {
-                                return (
-                                    <a href={h} target="_blank" rel="noopener noreferrer" {...rest}>
-                                        {children}
-                                    </a>
-                                );
-                            }
-                            // 内部リンクは Next Link
-                            return (
-                                <Link href={h || "#"} {...rest}>
-                                    {children}
-                                </Link>
-                            );
-                        },
-                        p: ({ children, node, ...rest }) => {
-                            const url = extractSingleBareUrl(children);
-                            if (url) return <LinkCard url={url} />;
-                            return <p {...rest}>{children}</p>;
-                        },                                
-                    }}
-                >
-                    {post.markdown}
-                </ReactMarkdown>
-            </div>
+            <TableOfContents items={tocItems} />
+            <MarkdownRenderer markdown={post.markdown} className={markdownProseClassName} />
 
             <section className="mt-10 rounded-xl border border-[var(--border)] bg-card/70 p-4 sm:p-5">
                 <p className="text-xs opacity-60 mb-3">Author</p>
