@@ -67,4 +67,3 @@ html[data-theme='dark'] {
 
 /* Scanline の負荷を抑えつつ効果を出す */
 .scanline { pointer-events: none; mix-blend-mode: overlay; opacity: 0.4; }
-

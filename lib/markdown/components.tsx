@@ -45,9 +45,56 @@ function getCodeLanguageFromPreChildren(children: ReactNode) {
     return extractLanguage(props.className);
 }
 
+function getFilteredChildren(children: ReactNode) {
+    const list = Array.isArray(children) ? children : [children];
+    return list.filter((child) => child !== "\n" && child !== null && child !== undefined);
+}
+
+function isImageBlockOnlyParagraph(children: ReactNode) {
+    const filtered = getFilteredChildren(children);
+    if (filtered.length !== 1) return false;
+    const only = filtered[0];
+    if (!isValidElement(only)) return false;
+    const props = only.props as { src?: unknown };
+    return typeof props.src === "string" && props.src.length > 0;
+}
+
+function isEmphasisOnlyParagraph(children: ReactNode) {
+    const filtered = getFilteredChildren(children);
+    if (filtered.length !== 1) return false;
+    const only = filtered[0];
+    return isValidElement(only) && only.type === "em";
+}
+
+function extractImageCaptionFromParagraph(children: ReactNode) {
+    const filtered = getFilteredChildren(children);
+    if (filtered.length < 2) return null;
+
+    const [first, ...rest] = filtered;
+    if (!isValidElement(first)) return null;
+
+    const imageProps = first.props as { src?: unknown; className?: string };
+    const isImage = typeof imageProps.src === "string" && imageProps.src.length > 0;
+    if (!isImage) return null;
+
+    const meaningfulRest = rest.filter((child) => {
+        return !(isValidElement(child) && child.type === "br");
+    });
+
+    if (meaningfulRest.length !== 1) return null;
+    const only = meaningfulRest[0];
+    if (!isValidElement(only) || only.type !== "em") return null;
+
+    return {
+        image: first,
+        caption: only,
+    };
+}
+
 export function createMarkdownComponents(options: MarkdownComponentOptions) {
     const baseOrigin = resolveOrigin(options.origin, options.fallbackOrigin);
     let headingIndex = 0;
+    let previousParagraphWasImage = false;
 
     function renderHeading(
         tag: "h1" | "h2" | "h3",
@@ -76,7 +123,7 @@ export function createMarkdownComponents(options: MarkdownComponentOptions) {
             const resolvedSrc = src.startsWith("/") ? `${baseOrigin}${src}` : src;
 
             return (
-                <div className="flex justify-center my-4">
+                <div className="md-image-block flex justify-center my-4">
                     <Image
                         src={resolvedSrc}
                         alt={altText?.trim() ?? ""}
@@ -108,9 +155,37 @@ export function createMarkdownComponents(options: MarkdownComponentOptions) {
         p: ({ children, ...rest }: ComponentPropsWithoutRef<"p">) => {
             if (options.enableLinkCard) {
                 const url = extractSingleBareUrl(children);
+                previousParagraphWasImage = false;
                 if (url) return <LinkCard url={url} />;
             }
 
+            const imageCaption = extractImageCaptionFromParagraph(children);
+            if (imageCaption) {
+                previousParagraphWasImage = false;
+                return (
+                    <div className="md-image-caption-block">
+                        <div className="md-image-paragraph">{imageCaption.image}</div>
+                        <p className="md-caption-candidate text-center">{imageCaption.caption}</p>
+                    </div>
+                );
+            }
+
+            if (isImageBlockOnlyParagraph(children)) {
+                previousParagraphWasImage = true;
+                return <div className="md-image-paragraph">{children}</div>;
+            }
+
+            if (isEmphasisOnlyParagraph(children)) {
+                const className = [
+                    rest.className,
+                    "md-caption-candidate",
+                    previousParagraphWasImage ? "text-center" : "",
+                ].filter(Boolean).join(" ");
+                previousParagraphWasImage = false;
+                return <p {...rest} className={className}>{children}</p>;
+            }
+
+            previousParagraphWasImage = false;
             return <p {...rest}>{children}</p>;
         },
         h1: (props: ComponentPropsWithoutRef<"h1">) => renderHeading("h1", props),

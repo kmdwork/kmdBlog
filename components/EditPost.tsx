@@ -1,6 +1,8 @@
 "use client"
 
 import { uploadImageAction } from "@/lib/actions/uploadImage";
+import { prepareImageForUpload } from "@/lib/images/client";
+import { IMAGE_INPUT_ACCEPT } from "@/lib/images/policy";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { MarkdownEditor, type MarkdownEditorHandle } from "@/components/MarkdownEditor";
 import { MarkdownRenderer, markdownProseClassName } from "@/lib/markdown";
@@ -79,18 +81,17 @@ export default function EditPost({ post, user }: EditPostProps) {
             
             try {
                 setCompressing(true);
-                // ここで圧縮（webp化 & リサイズ）
-                const compressed = await compressImageToWebp(file, 1600, 0.8);
+                const prepared = await prepareImageForUpload(file);
                 
                 const fd = new FormData();
                 fd.set("slug", slug);
-                fd.set("image", compressed);
+                fd.set("image", prepared);
         
                 // サーバーアクション実行
                 uploadAction(fd);            
             } catch (error) {
                 console.error(error);
-                alert("画像の圧縮中にエラーが発生しました。もう一度お試しください。");
+                alert(error instanceof Error ? error.message : "画像を処理できませんでした。");
             }finally {
                 // 同じファイルを続けて選べるようにinput値をリセット
                 e.target.value = "";
@@ -98,107 +99,6 @@ export default function EditPost({ post, user }: EditPostProps) {
             }
         }
 
-        // 画像の圧縮
-        async function compressImageToWebp(
-            file: File,
-            maxSize = 1600,
-            quality = 0.8,
-            minSizeToCompress = 300 * 1024 // ← 300KB 未満は圧縮しない
-        ): Promise<File> {
-            // 小さいファイルはそのまま返す
-            if (file.size <= minSizeToCompress) {
-                return file;
-            }
-
-            return new Promise((resolve, reject) => {
-                // タイムアウト設定(30秒)
-                const timeout = setTimeout(() => {
-                    reject(new Error("Image processing timeout"));
-                }, 30000);
-
-                const img = document.createElement("img");
-                const reader = new FileReader();
-
-                reader.onload = () => {
-                    img.src = reader.result as string;
-                };
-
-                reader.onerror = (err) => {
-                    clearTimeout(timeout);
-                    reject(err);
-                };
-
-                img.onload = () => {
-                    try {
-                        const canvas = document.createElement("canvas");
-                        const ctx = canvas.getContext("2d", { alpha: false });
-
-                        if (!ctx) {
-                            clearTimeout(timeout);
-                            reject(new Error("Canvas not supported"));
-                            return;
-                        }
-
-                        let { width, height } = img;
-
-                        // 既に小さい画像はリサイズせず圧縮だけ（※ただし150KB超えているので再エンコードはする）
-                        if (width <= maxSize && height <= maxSize) {
-                            canvas.width = width;
-                            canvas.height = height;
-                        } else {
-                            // アスペクト比を保って縮小
-                            if (width > height) {
-                                if (width > maxSize) {
-                                height = Math.round((height * maxSize) / width);
-                                width = maxSize;
-                                }
-                            } else {
-                                if (height > maxSize) {
-                                width = Math.round((width * maxSize) / height);
-                                height = maxSize;
-                                }
-                            }
-                            canvas.width = width;
-                            canvas.height = height;
-                        }
-
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        canvas.toBlob(
-                            (blob) => {
-                                clearTimeout(timeout);
-
-                                if (!blob) {
-                                    reject(new Error("Failed to compress image"));
-                                    return;
-                                }
-
-                                const baseName = file.name.replace(/\.[^/.]+$/, "");
-                                const compressedFile = new File([blob], `${baseName}.webp`, {
-                                    type: "image/webp",
-                                    lastModified: Date.now(),
-                                });
-
-                                resolve(compressedFile);
-                            },
-                            "image/webp",
-                            quality
-                        );
-                    } catch (err) {
-                        clearTimeout(timeout);
-                        reject(err);
-                    }
-                };
-
-                img.onerror = (err) => {
-                    clearTimeout(timeout);
-                    reject(err);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-    
         // 別のuseEffectで結果を処理
         useEffect(() => {
             if (uploadState.ok && uploadState.markdown) {
@@ -484,7 +384,7 @@ export default function EditPost({ post, user }: EditPostProps) {
                             <label className="inline-flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="file"
-                                    accept="image/*"
+                                    accept={IMAGE_INPUT_ACCEPT}
                                     className="hidden"
                                     disabled={uploading}
                                     onChange={handleImageSelect}
@@ -498,9 +398,7 @@ export default function EditPost({ post, user }: EditPostProps) {
                                         {compressing ? "画像を圧縮中…" : "画像をアップロード中…"}
                                     </p>
                                 ) : (
-                                    <p className="text-xs opacity-60 mt-1">
-                                        画像のファイル名に空白や日本語を使わないでください
-                                    </p>
+                                    <p className="text-xs opacity-60 mt-1">JPEG・PNG・WebP / 最大5 MiB</p>
                                 )}
                             </label>
                             {err('content') && (
