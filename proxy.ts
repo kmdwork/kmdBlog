@@ -5,7 +5,7 @@ export const proxy = auth((req) => {
 
     // 1) /management 以下は「ログイン必須」
     if (pathname.startsWith("/management")) {
-        if (!req.auth) {
+        if (!req.auth?.user) {
             const url = new URL("/login", req.nextUrl.origin);
             url.searchParams.set("from", pathname);
             return Response.redirect(url);
