@@ -7,7 +7,7 @@
 	"name": "kmdblog-web-dev",
 	"main": ".open-next/worker.js",
 	"account_id": "b0a13428f1c5b31e40235985336f152b",
-	"compatibility_date": "2025-03-01",
+	"compatibility_date": "2025-10-29",
 	"compatibility_flags": [
 		"nodejs_compat",
 		"global_fetch_strictly_public"
