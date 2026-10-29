@@ -1,6 +1,6 @@
 import { auth } from "./auth";
 
-export default auth((req) => {
+export const proxy = auth((req) => {
     const { pathname } = req.nextUrl;
 
     // 1) /management 以下は「ログイン必須」
@@ -32,4 +32,4 @@ export const config = {
     matcher: [
         "/management/:path*"
     ]
-}
+};

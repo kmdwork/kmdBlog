@@ -10,8 +10,6 @@ import PublicHeader from "@/components/layouts/PublicHeader"
 import Link from "next/link"
 import { Suspense } from "react"
 
-export const experimental_ppr = true;
-
 function normalizeOrigin(raw: string): string {
   return raw.replace(/\/+$/, "");
 }
