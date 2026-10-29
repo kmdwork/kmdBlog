@@ -3,19 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   put: vi.fn(),
   get: vi.fn(),
-  getCloudflareContext: vi.fn(),
+  getCloudflareEnv: vi.fn(),
 }));
 
-vi.mock("@opennextjs/cloudflare", () => ({
-  getCloudflareContext: mocks.getCloudflareContext,
+vi.mock("@/lib/cloudflare-env", () => ({
+  getCloudflareEnv: mocks.getCloudflareEnv,
 }));
 
 import { getR2Image, putR2Image, r2ImageKeyFromSlug } from "@/lib/r2";
 
 describe("R2 image storage", () => {
   beforeEach(() => {
-    mocks.getCloudflareContext.mockReturnValue({
-      env: { R2_IMAGES: { put: mocks.put, get: mocks.get } },
+    mocks.getCloudflareEnv.mockReturnValue({
+      R2_IMAGES: { put: mocks.put, get: mocks.get },
     });
     mocks.put.mockResolvedValue({ etag: "etag", size: 4 });
   });

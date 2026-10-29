@@ -15,7 +15,24 @@
 		"deploy:dev": "opennextjs-cloudflare build --config wrangler.dev.jsonc && wrangler deploy --config wrangler.dev.jsonc",
 		"deploy:stg": "opennextjs-cloudflare build --config wrangler.stg.jsonc && wrangler deploy --config wrangler.stg.jsonc",
 		"deploy:prod": "opennextjs-cloudflare build --config wrangler.prod.jsonc && wrangler deploy --config wrangler.prod.jsonc",
-		"local:dev": "opennextjs-cloudflare build --config wrangler.dev.jsonc && wrangler dev --local --config wrangler.dev.jsonc"
+		"local:dev": "opennextjs-cloudflare build --config wrangler.dev.jsonc && wrangler dev --local --config wrangler.dev.jsonc",
+		"dev:vinext": "vite dev --port 3001",
+		"build:vinext": "vite build",
+		"build:vinext:dev": "vite build --mode dev",
+		"start:vinext": "vite preview",
+		"start:vinext:dev": "vite preview --mode dev",
+		"cf-typegen:vinext": "cf workers types",
+		"cf-typegen:vinext:dev": "cf workers types --mode dev",
+		"deploy:vinext:dev:dry-run": "cf deploy --mode dev --dry-run --secrets-file .dev.vars.dev",
+		"deploy:vinext:dev": "cf deploy --mode dev --secrets-file .dev.vars.dev",
+		"build:vinext:stg": "vite build --mode stg",
+		"build:vinext:prod": "vite build --mode prod",
+		"cf-typegen:vinext:stg": "cf workers types --mode stg",
+		"cf-typegen:vinext:prod": "cf workers types --mode prod",
+		"deploy:vinext:stg:dry-run": "cf deploy --mode stg --dry-run --secrets-file .dev.vars.stg",
+		"deploy:vinext:prod:dry-run": "cf deploy --mode prod --dry-run --secrets-file .dev.vars.prod",
+		"deploy:vinext:stg": "cf deploy --mode stg --secrets-file .dev.vars.stg",
+		"deploy:vinext:prod": "cf deploy --mode prod --secrets-file .dev.vars.prod"
 	},
 	"dependencies": {
 		"@codemirror/lang-markdown": "^6.3.4",
@@ -23,6 +40,7 @@
 		"@codemirror/view": "^6.43.0",
 		"@opennextjs/cloudflare": "^1.20.14",
 		"@tailwindcss/typography": "^0.5.19",
+		"@vinext/cloudflare": "^1.3.0",
 		"autoprefixer": "^10.5.0",
 		"codemirror": "^6.0.2",
 		"drizzle-orm": "0.45.4",
@@ -30,27 +48,34 @@
 		"next": "16.4.3",
 		"next-auth": "5.0.0-beta.32",
 		"postcss": "^8.5.15",
-		"react": "^19.2.6",
-		"react-dom": "^19.2.6",
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
 		"react-markdown": "^10.1.0",
+		"react-server-dom-webpack": "^19.3.1",
 		"rehype-sanitize": "^6.0.0",
 		"remark-breaks": "^4.0.0",
 		"remark-gfm": "^4.0.1",
 		"remark-parse": "^11.0.0",
 		"sharp": "0.35.5",
 		"unified": "^11.0.5",
+		"vinext": "^1.4.0",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
+		"@cloudflare/vite-plugin": "^2.0.0-beta.v.7",
 		"@tailwindcss/postcss": "^4.3.0",
 		"@types/node": "^22.20.5",
 		"@types/react": "^19.2.15",
 		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.1.2",
+		"@vitejs/plugin-rsc": "^0.5.38",
+		"cf": "^1.0.0-beta.25",
 		"drizzle-kit": "^0.31.10",
 		"eslint": "^9.39.4",
 		"eslint-config-next": "16.4.3",
 		"tailwindcss": "^4.3.0",
 		"typescript": "^5",
+		"vite": "^8.3.5",
 		"vitest": "4.1.12",
 		"wrangler": "^4.86.0"
 	},
@@ -72,6 +97,8 @@
 		"@tailwindcss/typography": {
 			"postcss-selector-parser": "6.1.5"
 		},
-		"brace-expansion": "1.1.21"
-	}
+		"brace-expansion": "1.1.21",
+		"fflate": "0.8.3"
+	},
+	"type": "module"
 }
