@@ -29,7 +29,7 @@ Vinextは画像原本を直接配信します。リサイズ・形式変換は�
 
 ## stgを先に確認する
 
-1. `.dev.vars.example`を参考に、Git管理外の`.dev.vars.stg`へstg用の認証・メール設定を記入します。`APP_ORIGIN`はstg/prodでは設定ファイルのtext bindingで固定しているため、secretファイルには含めません。
+1. `.dev.vars.example`を参考に、Git管理外の`.dev.vars.stg`へstg用の認証・メール設定を記入します。`APP_ORIGIN=https://stg.kmdworks.com`も含めます。dev/stg/prodともにsecret bindingとして宣言し、手動デプロイで登録した値をCIで保持します。本番用の`.dev.vars.prod`には`APP_ORIGIN=https://kmdworks.com`を設定します。
 2. Google OAuthクライアントに`https://stg.kmdworks.com/api/auth/callback/google`が登録され、`AUTH_GOOGLE_ID`と一致することを確認します。
 3. `npx cf auth whoami`で認証先を確認し、`npm run deploy:vinext:stg:dry-run`を実行します。
 4. Dashboardで既存OpenNext Workerから`stg.kmdworks.com/*`のRouteだけを削除し、直後に`npm run deploy:vinext:stg`を実行します。WorkerやDNS、D1/R2は削除しません。切替中は短時間アクセスできなくなる可能性があります。
@@ -52,6 +52,8 @@ Vinextは画像原本を直接配信します。リサイズ・形式変換は�
 所有者がmainへ反映後、Actionsの成功とstgのログイン・記事・画像を確認します。すでにVinextへ移管したRouteを更新するため、再度Routeを削除する必要はありません。
 
 CI変更後のローカル検証では、ワークフローYAMLの読み込み、Node.js 24・stg用コマンドの確認、全47テスト、stgビルドと`cf deploy --mode stg --prebuilt --dry-run`が成功しました。GitHub上のトークン権限と既存secretの引き継ぎは、実際のActions実行後に確認します。
+
+初回CIでは、既存の`APP_ORIGIN` secretと設定のtext bindingが競合してアップロードが中止されました。stg/prodの宣言をsecret bindingに統一し、CIで既存値を保持するよう修正しました。strict検査の解除やリモートsecretの削除は不要です。dry-runはリモートの型競合を検出しないため、修正後のActions実行で最終確認します。
 
 ## 本番のGo条件
 

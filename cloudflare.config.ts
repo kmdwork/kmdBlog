@@ -15,14 +15,12 @@ export default defineConfig(({ mode }) => {
   const stagedDeployment = mode === "stg"
     ? {
         environment: "stg",
-        origin: "https://stg.kmdworks.com",
         route: "stg.kmdworks.com/*",
         databaseId: "1e4af4a6-62c2-4932-a20f-8f1c939f8774",
       }
     : mode === "prod"
       ? {
           environment: "prod",
-          origin: "https://kmdworks.com",
           route: "kmdworks.com/*",
           databaseId: "558a641d-bf16-44ca-9237-fa9c6f7b8d16",
         }
@@ -80,7 +78,7 @@ export default defineConfig(({ mode }) => {
           ? {
               ...commonEnv,
               APP_ENV: bindings.text(stagedDeployment.environment),
-              APP_ORIGIN: bindings.text(stagedDeployment.origin),
+              APP_ORIGIN: bindings.secret(),
               API_BASE_URL: bindings.text(`https://api-${stagedDeployment.environment}.example.com`),
               DB: bindings.d1({
                 name: `kmdblog-d1-${stagedDeployment.environment}`,
