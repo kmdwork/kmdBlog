@@ -1,4 +1,4 @@
-name: Deploy Staging (npm)
+name: Deploy Staging (Vinext)
 
 on:
   push:
@@ -7,6 +7,9 @@ on:
 jobs:
   deploy-stg:
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-stg
+      cancel-in-progress: false
     permissions:
       contents: read
 
@@ -16,16 +19,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (OpenNext)
-        run: npx opennextjs-cloudflare build --config wrangler.stg.jsonc
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (Vinext staging)
+        run: npm run build:vinext:stg
 
       - name: Deploy to Cloudflare (Staging)
-        run: npx wrangler deploy --config wrangler.stg.jsonc
+        run: npx cf deploy --mode stg --prebuilt
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

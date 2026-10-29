@@ -1,4 +1,4 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
 import {
     imageCacheControl,
     type AllowedImageType,
@@ -7,11 +7,7 @@ import {
 
 // ----------投稿取得----------
 export async function getR2Text (r2Key: string):Promise<string | null> {
-    const { env } = getCloudflareContext<{
-        env: { R2_POSTS: R2Bucket };
-    }>();
-    
-    // @ts-expect-error: R2_POSTS binding is injected by Wrangler at runtime
+    const env = getCloudflareEnv();
     const obj = await env.R2_POSTS.get(r2Key);
     if(!obj) return null;
     return obj.text();
@@ -30,8 +26,7 @@ export async function getR2Image(
     key: string,
     conditionalHeaders?: Headers,
 ): Promise<R2ImageResult | null> {
-    const { env } = getCloudflareContext();
-    const bucket = (env as unknown as { R2_IMAGES: R2Bucket }).R2_IMAGES;
+    const bucket = getCloudflareEnv().R2_IMAGES;
     const obj = conditionalHeaders
         ? await bucket.get(key, {
             onlyIf: conditionalHeaders,
@@ -59,11 +54,7 @@ export function r2PostsKeyFromSlug(filename: string ,d = new Date()) {
 
 // r2.md 登録 & 更新
 export async function putR2Markdown(key: string, content: string) {
-    const { env } = getCloudflareContext<{
-        env: { R2_POSTS: R2Bucket };
-    }>();
-    // @ts-expect-error: binding is injected by Wrangler
-    const bucket: R2Bucket = env.R2_POSTS;
+    const bucket = getCloudflareEnv().R2_POSTS;
     const res = await bucket.put(key, content, {
         httpMetadata: { contentType: "text/markdown; charset=utf-8", cacheControl: "no-cache" },
     });
@@ -93,11 +84,7 @@ export async function putR2Image(params: {
 }) {
     const { slug, file, imageType } = params;
 
-    const { env } = getCloudflareContext<{
-        env: { R2_IMAGES: R2Bucket };
-    }>();
-    // @ts-expect-error: binding is injected by Wrangler
-    const bucket: R2Bucket = env.R2_IMAGES;
+    const bucket = getCloudflareEnv().R2_IMAGES;
 
     const key = r2ImageKeyFromSlug(slug, imageType.extension);
 

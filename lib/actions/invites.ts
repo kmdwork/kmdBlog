@@ -5,9 +5,8 @@ import { getDb } from "../db";
 import { invites, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { generateInviteToken } from "../token";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { sendEmail } from "../mailer";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 export type InviteRole = "admin" | "editor" | "author" | "reader";
 
@@ -113,10 +112,8 @@ export async function createAndSendInvite(formData: FormData) {
     
         redirect("/management/admin/invites?sent=1");
     } catch (error) {
-        // ★ redirect() 由来なら“正常系”なので捕まえない
-        if (isRedirectError(error)) {
-            throw error; // ← 重要
-        }
+        // redirect() など、Next.jsが制御フローに使う例外は公開APIで再送出する。
+        unstable_rethrow(error);
         console.error("[createAndSendInvite] failed:", error);
         redirect(`/management/admin/invites?error=${enc(error) ?? "unknown"}`);
     }
