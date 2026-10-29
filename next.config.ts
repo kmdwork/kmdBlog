@@ -9,9 +9,6 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    // VinextではCloudflare Images optimizerをまだ構成していないため、
-    // 原本を直接配信して/_next/imageの400を避ける。OpenNextは従来どおり最適化する。
-    unoptimized: process.env.KMDBLOG_RUNTIME === "vinext",
     remotePatterns: [
       { protocol: "https", hostname: "kmdworks.com" },
       { protocol: "https", hostname: "dev.kmdworks.com" },
@@ -29,6 +26,4 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 
 // added by create cloudflare to enable calling `getCloudflareContext()` in `next dev`
-if (process.env.KMDBLOG_RUNTIME !== "vinext") {
-  initOpenNextCloudflareForDev();
-}
+initOpenNextCloudflareForDev();

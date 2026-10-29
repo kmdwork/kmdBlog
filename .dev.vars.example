@@ -1,9 +1,0 @@
-# Vinext / Cloudflare Worker local secrets
-# Merge these keys into .dev.vars or .dev.vars.production and set local values.
-APP_ORIGIN=
-AUTH_SECRET=
-AUTH_GOOGLE_ID=
-AUTH_GOOGLE_SECRET=
-OWNER_EMAIL=
-RESEND_API_KEY=
-MAIL_FROM=
